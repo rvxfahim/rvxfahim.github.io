@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="1849px" preserveAspectRatio="none" style="width:641px;height:1849px;" version="1.1" viewBox="0 0 641 1849" width="641px" zoomAndPan="magnify"><defs><filter height="300%" id="fpbqhr66bq0sa" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><text fill="#000000" font-family="sans-serif" font-size="18" lengthAdjust="spacingAndGlyphs" textLength="475" x="82.25" y="26.708">Device Tree + Driver Binding — From .dts to probe()</text><rect fill="#F5F5F5" filter="url(#fpbqhr66bq0sa)" height="552.6875" style="stroke: #666666; stroke-width: 2.0;" width="516" x="114.5" y="31.7549"/><path d="M388.5,32.7549 L388.5,41.0518 L378.5,51.0518 L114.5,51.0518 " fill="none" style="stroke: #666666; stroke-width: 2.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="264" x="117.5" y="45.75">1. Build-Time (Development Host)</text><path d="M367.5,61.0518 L367.5,167.9814 L347.5,171.9814 L367.5,175.9814 L367.5,282.9111 A0,0 0 0 0 367.5,282.9111 L620.5,282.9111 A0,0 0 0 0 620.5,282.9111 L620.5,71.0518 L610.5,61.0518 L367.5,61.0518 A0,0 0 0 0 367.5,61.0518 " fill="#FBFB77" filter="url(#fpbqhr66bq0sa)" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M610.5,61.0518 L610.5,71.0518 L620.5,71.0518 L610.5,61.0518 " fill="#FBFB77" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="52" x="373.5" y="78.1187">/dts-v1/;</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="50" x="373.5" y="93.2515">/plugin/;</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="16" x="373.5" y="108.3843">/ {</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="92" x="381.5" y="123.5171">fragment@0 {</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="110" x="389.5" y="138.6499">target-path = "/";</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="0" x="389.5" y="153.7827"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" text-decoration="underline" textLength="46" x="389.5" y="153.7827">overlay</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="8" x="439.5" y="153.7827">{</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="102" x="397.5" y="168.9155">mock-adxl345 {</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="86" x="405.5" y="184.0483">compatible =</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="192" x="413.5" y="199.1812">"my_project,mock-adxl345";</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="103" x="405.5" y="214.314">status = "okay";</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="12" x="397.5" y="229.4468">};</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="12" x="389.5" y="244.5796">};</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="12" x="381.5" y="259.7124">};</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="12" x="373.5" y="274.8452">};</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="33.9688" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="211" x="136.5" y="154.9971"/><text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="122" x="146.5" y="176.1357">mock-adxl345.dts</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="65" x="272.5" y="176.1357">source file</text><path d="M352,292.9111 L352,346.876 L332,350.876 L352,354.876 L352,408.8408 A0,0 0 0 0 352,408.8408 L578,408.8408 A0,0 0 0 0 578,408.8408 L578,302.9111 L568,292.9111 L352,292.9111 A0,0 0 0 0 352,292.9111 " fill="#FBFB77" filter="url(#fpbqhr66bq0sa)" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M568,292.9111 L568,302.9111 L578,302.9111 L568,292.9111 " fill="#FBFB77" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="83" x="358" y="309.978">bitbake calls:</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="122" x="358" y="325.1108">dtc -@ -I dts -O dtb</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="140" x="366" y="340.2437">-o mock-adxl345.dtbo</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="114" x="378" y="355.3765">mock-adxl345.dts</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="0" x="362" y="370.5093"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="176" x="358" y="385.6421">The -@ flag enables overlay</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="205" x="358" y="400.7749">symbols for runtime application.</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="33.9688" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="180" x="152" y="333.8916"/><text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="22" x="162" y="355.0303">dtc</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="134" x="188" y="355.0303">compiles DTS → DTBO</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="47.9375" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="226" x="129" y="428.8408"/><text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="132" x="139" y="449.9795">mock-adxl345.dtbo</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="70" x="275" y="449.9795">installed to</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="173" x="147" y="463.9482">/boot/overlays/ in the rootfs</text><path d="M379.5,486.7783 L379.5,525.6104 L359.5,529.6104 L379.5,533.6104 L379.5,572.4424 A0,0 0 0 0 379.5,572.4424 L591.5,572.4424 A0,0 0 0 0 591.5,572.4424 L591.5,496.7783 L581.5,486.7783 L379.5,486.7783 A0,0 0 0 0 379.5,486.7783 " fill="#FBFB77" filter="url(#fpbqhr66bq0sa)" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M581.5,486.7783 L581.5,496.7783 L591.5,496.7783 L581.5,486.7783 " fill="#FBFB77" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="154" x="385.5" y="503.8452">module.bbclass handles</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="164" x="385.5" y="518.978">cross-compilation against</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="132" x="385.5" y="534.1108">the kernel build tree.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="191" x="385.5" y="549.2437">KERNEL_MODULE_AUTOLOAD</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="175" x="385.5" y="564.3765">ensures modprobe at boot.</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="47.9375" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="235" x="124.5" y="505.6416"/><text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="117" x="134.5" y="526.7803">mock_adxl345.ko</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="94" x="255.5" y="526.7803">cross-compiled</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="181" x="142.5" y="540.749">and installed to /lib/modules/</text><rect fill="#F5F5F5" filter="url(#fpbqhr66bq0sa)" height="299.3984" style="stroke: #666666; stroke-width: 2.0;" width="546" x="83" y="595.2441"/><path d="M313,596.2441 L313,604.541 L303,614.541 L83,614.541 " fill="none" style="stroke: #666666; stroke-width: 2.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="220" x="86" y="609.2393">2. Boot-Time (Target Board)</text><path d="M363.5,630.8105 L363.5,654.5098 L343.5,658.5098 L363.5,662.5098 L363.5,686.209 A0,0 0 0 0 363.5,686.209 L551.5,686.209 A0,0 0 0 0 551.5,686.209 L551.5,640.8105 L541.5,630.8105 L363.5,630.8105 A0,0 0 0 0 363.5,630.8105 " fill="#FBFB77" filter="url(#fpbqhr66bq0sa)" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M541.5,630.8105 L541.5,640.8105 L551.5,640.8105 L541.5,630.8105 " fill="#FBFB77" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="152" x="369.5" y="647.8774">The base .dtb describes</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="167" x="369.5" y="663.0103">i.MX8M Mini SoC hardware</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="150" x="369.5" y="678.1431">(UART, SDHC, I2C, etc.)</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="47.9375" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="203" x="140.5" y="634.541"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="172" x="150.5" y="655.6797">U-Boot loads Linux kernel +</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="175" x="158.5" y="669.6484">base device tree blob (.dtb)</text><path d="M353.5,696.209 L353.5,735.041 L333.5,739.041 L353.5,743.041 L353.5,781.873 A0,0 0 0 0 353.5,781.873 L530.5,781.873 A0,0 0 0 0 530.5,781.873 L530.5,706.209 L520.5,696.209 L353.5,696.209 A0,0 0 0 0 353.5,696.209 " fill="#FBFB77" filter="url(#fpbqhr66bq0sa)" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M520.5,696.209 L520.5,706.209 L530.5,706.209 L520.5,696.209 " fill="#FBFB77" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="156" x="359.5" y="713.2759">The bootloader or kernel</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="146" x="359.5" y="728.4087">config loads .dtbo files.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="151" x="359.5" y="743.5415">Overlays add/modify DT</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="141" x="359.5" y="758.6743">nodes without altering</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="89" x="359.5" y="773.8071">the base .dtb.</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="47.9375" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="183" x="150.5" y="715.0723"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="163" x="160.5" y="736.2109">Kernel applies DT overlays</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="124" x="168.5" y="750.1797">from /boot/overlays/</text><path d="M411,796.9785 L411,835.8105 L391,839.8105 L411,843.8105 L411,882.6426 A0,0 0 0 0 411,882.6426 L619,882.6426 A0,0 0 0 0 619,882.6426 L619,806.9785 L609,796.9785 L411,796.9785 A0,0 0 0 0 411,796.9785 " fill="#FBFB77" filter="url(#fpbqhr66bq0sa)" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M609,796.9785 L609,806.9785 L619,806.9785 L609,796.9785 " fill="#FBFB77" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="129" x="417" y="814.0454">The kernel's DT core</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="167" x="417" y="829.1782">unflattens the overlay and</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="154" x="417" y="844.311">creates platform_device</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="175" x="417" y="859.4438">structs for each compatible</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="187" x="417" y="874.5767">node under the platform bus.</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="75.875" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="298" x="93" y="801.873"/><text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="170" x="103" y="823.0117">platform_device created</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="12" x="273" y="823.0117">\n</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="142" x="111" y="836.9805">node: /mock-adxl345\n</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="270" x="111" y="850.9492">compatible: "my_project,mock-adxl345"\n</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="87" x="111" y="864.918">status: "okay"</text><rect fill="#F5F5F5" filter="url(#fpbqhr66bq0sa)" height="933.043" style="stroke: #666666; stroke-width: 2.0;" width="615" x="10" y="905.4443"/><path d="M249,906.4443 L249,914.7412 L239,924.7412 L10,924.7412 " fill="none" style="stroke: #666666; stroke-width: 2.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="229" x="13" y="919.4395">3. Kernel (Driver Subsystem)</text><path d="M376,944.9951 L376,968.6943 L356,972.6943 L376,976.6943 L376,1000.3936 A0,0 0 0 0 376,1000.3936 L559,1000.3936 A0,0 0 0 0 559,1000.3936 L559,954.9951 L549,944.9951 L376,944.9951 A0,0 0 0 0 376,944.9951 " fill="#FBFB77" filter="url(#fpbqhr66bq0sa)" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M549,944.9951 L549,954.9951 L559,954.9951 L549,944.9951 " fill="#FBFB77" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="162" x="382" y="962.062">module_platform_driver()</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="150" x="382" y="977.1948">registers the driver with</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="110" x="382" y="992.3276">the platform bus.</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="61.9063" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="228" x="128" y="941.7412"/><text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="117" x="138" y="962.8799">mock_adxl345.ko</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="43" x="259" y="962.8799">loaded</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="200" x="146" y="976.8486">(via KERNEL_MODULE_AUTOLOAD</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="86" x="150" y="990.8174">or modprobe)</text><path d="M360,1019.917 L360,1043.6162 L340,1047.6162 L360,1051.6162 L360,1075.3154 A0,0 0 0 0 360,1075.3154 L615,1075.3154 A0,0 0 0 0 615,1075.3154 L615,1029.917 L605,1019.917 L360,1019.917 A0,0 0 0 0 360,1019.917 " fill="#FBFB77" filter="url(#fpbqhr66bq0sa)" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M605,1019.917 L605,1029.917 L615,1029.917 L605,1019.917 " fill="#FBFB77" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="189" x="366" y="1036.9839">Bus matching logic compares</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="200" x="366" y="1052.1167">driver's of_match_table against</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="234" x="366" y="1067.2495">device node's "compatible" property.</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="47.9375" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="196" x="144" y="1023.6475"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="176" x="154" y="1044.7861">Platform bus matches driver</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="57" x="162" y="1058.7549">to device</text><polygon fill="#FEFECE" filter="url(#fpbqhr66bq0sa)" points="159,1095.3154,325,1095.3154,337,1108.1201,325,1120.9248,159,1120.9248,147,1108.1201,159,1095.3154" style="stroke: #A80036; stroke-width: 1.5;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="166" x="159" y="1105.5259">"my_project,mock-adxl345"</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="55" x="175" y="1118.3306">matches?</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="20" x="127" y="1105.5259">yes</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="14" x="337" y="1105.5259">no</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="33.9688" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="214" x="30" y="1130.9248"/><text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="153" x="40" y="1152.0635">mock_adxl345_probe()</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="37" x="197" y="1152.0635">called</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="47.9375" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="155" x="269.5" y="1130.9248"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="120" x="279.5" y="1152.0635">No match — device</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="127" x="287.5" y="1166.0322">remains unattached</text><ellipse cx="347" cy="1209.8623" fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" rx="11" ry="11" style="stroke: #000000; stroke-width: 1.0;"/><ellipse cx="347" cy="1209.8623" fill="#000000" rx="6" ry="6" style="stroke: #7F7F7F; stroke-width: 1.0;"/><path d="M406.5,1256.9209 L406.5,1295.7529 L386.5,1299.7529 L406.5,1303.7529 L406.5,1342.585 A0,0 0 0 0 406.5,1342.585 L572.5,1342.585 A0,0 0 0 0 572.5,1342.585 L572.5,1266.9209 L562.5,1256.9209 L406.5,1256.9209 A0,0 0 0 0 406.5,1256.9209 " fill="#FBFB77" filter="url(#fpbqhr66bq0sa)" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M562.5,1256.9209 L562.5,1266.9209 L572.5,1266.9209 L562.5,1256.9209 " fill="#FBFB77" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="137" x="412.5" y="1273.9878">devm_* functions are</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="145" x="412.5" y="1289.1206">managed resources —</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="120" x="412.5" y="1304.2534">they auto-clean on</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="100" x="412.5" y="1319.3862">driver unbind or</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="101" x="412.5" y="1334.519">device removal.</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="117.7813" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="289" x="97.5" y="1240.8623"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="104" x="107.5" y="1262.001">Inside probe():\n</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="264" x="107.5" y="1275.9697">1. devm_iio_device_alloc(dev, sizeof(data))</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="246" x="107.5" y="1289.9385">2. Set iio_dev-&gt;name = "mock-adxl345"</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="207" x="107.5" y="1303.9072">3. Set iio_dev-&gt;channels (X, Y, Z)</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="269" x="107.5" y="1317.876">4. Set iio_dev-&gt;info with .read_raw callback</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="254" x="107.5" y="1331.8447">5. platform_set_drvdata(pdev, indio_dev)</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="268" x="107.5" y="1345.8135">6. devm_iio_device_register(dev, indio_dev)</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="117.7813" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="234" x="125" y="1378.6436"/><text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="147" x="135" y="1399.7822">IIO device registered</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="12" x="282" y="1399.7822">\n</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="206" x="143" y="1413.751">/sys/bus/iio/devices/iio:device0/\n</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="186" x="143" y="1427.7197">├── name → "mock-adxl345"\n</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="127" x="143" y="1441.6885">├── in_accel_x_raw\n</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="127" x="143" y="1455.6572">├── in_accel_y_raw\n</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="126" x="143" y="1469.626">├── in_accel_z_raw\n</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="164" x="143" y="1483.5947">└── in_accel_scale → 4000</text><rect fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" height="47.9375" rx="12.5" ry="12.5" style="stroke: #333333; stroke-width: 1.5;" width="200" x="142" y="1516.4248"/><text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="180" x="152" y="1537.5635">User-space can now read</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="167" x="160" y="1551.5322">acceleration data via sysfs</text><path d="M273,1574.3623 L273,1696.4248 L253,1700.4248 L273,1704.4248 L273,1826.4873 A0,0 0 0 0 273,1826.4873 L576,1826.4873 A0,0 0 0 0 576,1826.4873 L576,1584.3623 L566,1574.3623 L273,1574.3623 A0,0 0 0 0 273,1574.3623 " fill="#FBFB77" filter="url(#fpbqhr66bq0sa)" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M566,1574.3623 L566,1584.3623 L576,1584.3623 L566,1574.3623 " fill="#FBFB77" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="262" x="279" y="1591.4292">Key Concept: Device Tree Matching</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="0" x="283" y="1606.562"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="238" x="279" y="1621.6948">The DT overlay declares a device with</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="282" x="279" y="1636.8276">compatible = "my_project,mock-adxl345".</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="0" x="283" y="1651.9604"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="248" x="279" y="1667.0933">The driver declares an of_match_table:</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="197" x="287" y="1682.2261">static const struct of_device_id</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="196" x="287" y="1697.3589">mock_adxl345_of_match[] = {</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="102" x="295" y="1712.4917">{ .compatible =</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="204" x="311" y="1727.6245">"my_project,mock-adxl345" },</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="104" x="295" y="1742.7573">{ /* sentinel */ }</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="12" x="287" y="1757.8901">};</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="203" x="287" y="1773.0229">MODULE_DEVICE_TABLE(of, ...);</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="0" x="283" y="1788.1558"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="267" x="279" y="1803.2886">The platform bus compares these strings.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="141" x="279" y="1818.4214">A match calls probe().</text><ellipse cx="242" cy="1700.4248" fill="#FFFFFF" filter="url(#fpbqhr66bq0sa)" rx="11" ry="11" style="stroke: #000000; stroke-width: 1.0;"/><ellipse cx="242" cy="1700.4248" fill="#000000" rx="6" ry="6" style="stroke: #7F7F7F; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="188.9658" y2="333.8916"/><polygon fill="#A80036" points="238,323.8916,242,333.8916,246,323.8916,242,327.8916" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="367.8604" y2="428.8408"/><polygon fill="#A80036" points="238,418.8408,242,428.8408,246,418.8408,242,422.8408" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="476.7783" y2="505.6416"/><polygon fill="#A80036" points="238,495.6416,242,505.6416,246,495.6416,242,499.6416" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="682.4785" y2="715.0723"/><polygon fill="#A80036" points="238,705.0723,242,715.0723,246,705.0723,242,709.0723" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="763.0098" y2="801.873"/><polygon fill="#A80036" points="238,791.873,242,801.873,246,791.873,242,795.873" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="553.5791" y2="634.541"/><polygon fill="#A80036" points="238,624.541,242,634.541,246,624.541,242,628.541" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="1003.6475" y2="1023.6475"/><polygon fill="#A80036" points="238,1013.6475,242,1023.6475,246,1013.6475,242,1017.6475" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="347" x2="347" y1="1178.8623" y2="1198.8623"/><polygon fill="#A80036" points="343,1188.8623,347,1198.8623,351,1188.8623,347,1192.8623" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="147" x2="137" y1="1108.1201" y2="1108.1201"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="137" x2="137" y1="1108.1201" y2="1130.9248"/><polygon fill="#A80036" points="133,1120.9248,137,1130.9248,141,1120.9248,137,1124.9248" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="337" x2="347" y1="1108.1201" y2="1108.1201"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="347" x2="347" y1="1108.1201" y2="1130.9248"/><polygon fill="#A80036" points="343,1120.9248,347,1130.9248,351,1120.9248,347,1124.9248" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="137" x2="137" y1="1164.8936" y2="1225.8623"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="137" x2="242" y1="1225.8623" y2="1225.8623"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="1225.8623" y2="1240.8623"/><polygon fill="#A80036" points="238,1230.8623,242,1240.8623,246,1230.8623,242,1234.8623" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="1071.585" y2="1095.3154"/><polygon fill="#A80036" points="238,1085.3154,242,1095.3154,246,1085.3154,242,1089.3154" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="1358.6436" y2="1378.6436"/><polygon fill="#A80036" points="238,1368.6436,242,1378.6436,246,1368.6436,242,1372.6436" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="1496.4248" y2="1516.4248"/><polygon fill="#A80036" points="238,1506.4248,242,1516.4248,246,1506.4248,242,1510.4248" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="1564.3623" y2="1689.4248"/><polygon fill="#A80036" points="238,1679.4248,242,1689.4248,246,1679.4248,242,1683.4248" style="stroke: #A80036; stroke-width: 1.0;"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="242" x2="242" y1="877.748" y2="941.7412"/><polygon fill="#A80036" points="238,931.7412,242,941.7412,246,931.7412,242,935.7412" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[6a99ea6f12d20acfdd23ebb4c0ca3f57]
+@startuml
+
+
+skinparam activity {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  FontSize 12
+}
+
+skinparam partition {
+  BackgroundColor #F5F5F5
+  BorderColor #666666
+  FontSize 14
+  FontStyle bold
+}
+
+title Device Tree + Driver Binding — From .dts to probe()
+
+partition "1. Build-Time (Development Host)" #A9DCDF {
+
+  :**mock-adxl345.dts** source file;
+  note right
+    /dts-v1/;
+    /plugin/;
+    / {
+      fragment@0 {
+        target-path = "/";
+        __overlay__ {
+          mock-adxl345 {
+            compatible =
+              "my_project,mock-adxl345";
+            status = "okay";
+          };
+        };
+      };
+    };
+  end note
+
+  :**dtc** compiles DTS → DTBO;
+  note right
+    bitbake calls:
+    dtc -@ -I dts -O dtb
+      -o mock-adxl345.dtbo
+         mock-adxl345.dts
+
+    The -@ flag enables overlay
+    symbols for runtime application.
+  end note
+
+  :**mock-adxl345.dtbo** installed to
+    /boot/overlays/ in the rootfs;
+
+  :**mock_adxl345.ko** cross-compiled
+    and installed to /lib/modules/;
+  note right
+    module.bbclass handles
+    cross-compilation against
+    the kernel build tree.
+    KERNEL_MODULE_AUTOLOAD
+    ensures modprobe at boot.
+  end note
+}
+
+partition "2. Boot-Time (Target Board)" #FEF0D9 {
+
+  :U-Boot loads Linux kernel +
+    base device tree blob (.dtb);
+  note right
+    The base .dtb describes
+    i.MX8M Mini SoC hardware
+    (UART, SDHC, I2C, etc.)
+  end note
+
+  :Kernel applies DT overlays
+    from /boot/overlays/;
+  note right
+    The bootloader or kernel
+    config loads .dtbo files.
+    Overlays add/modify DT
+    nodes without altering
+    the base .dtb.
+  end note
+
+  :**platform_device created**\n
+    node: /mock-adxl345\n
+    compatible: "my_project,mock-adxl345"\n
+    status: "okay";
+  note right
+    The kernel's DT core
+    unflattens the overlay and
+    creates platform_device
+    structs for each compatible
+    node under the platform bus.
+  end note
+}
+
+partition "3. Kernel (Driver Subsystem)" #F8CECC {
+
+  :**mock_adxl345.ko** loaded
+    (via KERNEL_MODULE_AUTOLOAD
+     or modprobe);
+  note right
+    module_platform_driver()
+    registers the driver with
+    the platform bus.
+  end note
+
+  :Platform bus matches driver
+    to device;
+  note right
+    Bus matching logic compares
+    driver's of_match_table against
+    device node's "compatible" property.
+  end note
+
+  if ("my_project,mock-adxl345"\n    matches?) then (yes)
+    :**mock_adxl345_probe()** called;
+  else (no)
+    :No match — device
+      remains unattached;
+    stop
+  endif
+
+  :Inside probe():\n
+  1. devm_iio_device_alloc(dev, sizeof(data))
+  2. Set iio_dev->name = "mock-adxl345"
+  3. Set iio_dev->channels (X, Y, Z)
+  4. Set iio_dev->info with .read_raw callback
+  5. platform_set_drvdata(pdev, indio_dev)
+  6. devm_iio_device_register(dev, indio_dev);
+
+  note right
+    devm_* functions are
+    managed resources —
+    they auto-clean on
+    driver unbind or
+    device removal.
+  end note
+
+  :**IIO device registered**\n
+    /sys/bus/iio/devices/iio:device0/\n
+    ├── name → "mock-adxl345"\n
+    ├── in_accel_x_raw\n
+    ├── in_accel_y_raw\n
+    ├── in_accel_z_raw\n
+    └── in_accel_scale → 4000;
+
+  :**User-space can now read**
+    acceleration data via sysfs;
+
+  stop
+}
+
+note right
+  **Key Concept: Device Tree Matching**
+
+  The DT overlay declares a device with
+  compatible = "my_project,mock-adxl345".
+
+  The driver declares an of_match_table:
+    static const struct of_device_id
+    mock_adxl345_of_match[] = {
+      { .compatible =
+          "my_project,mock-adxl345" },
+      { /* sentinel */ }
+    };
+    MODULE_DEVICE_TABLE(of, ...);
+
+  The platform bus compares these strings.
+  A match calls probe().
+end note
+
+@enduml
+
+PlantUML version 1.2020.02(Sun Mar 01 11:22:07 CET 2020)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Java Version: 11.0.31+11-post-1ubuntu1-22.04.2-Ubuntu
+Operating System: Linux
+Default Encoding: UTF-8
+Language: en
+Country: null
+--></g></svg>

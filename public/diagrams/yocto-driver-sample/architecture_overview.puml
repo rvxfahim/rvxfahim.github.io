@@ -1,0 +1,149 @@
+@startuml
+' =============================================================================
+' Overall Architecture — Yocto Driver Sample Yocto Project
+'
+' Shows build-time components on the development host and run-time components
+' on the i.MX8M Mini EVK target board.
+'
+' Use: plantuml architecture_overview.puml
+' =============================================================================
+
+!define BUILD_COLOR A9DCDF
+!define RUNTIME_COLOR FEF0D9
+!define RECIPE_COLOR D5E8D4
+!define KERNEL_COLOR F8CECC
+!define APP_COLOR DAE8FC
+
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  FontSize 12
+}
+
+skinparam package {
+  BackgroundColor #F5F5F5
+  BorderColor #666666
+  FontSize 14
+  FontStyle bold
+}
+
+skinparam arrow {
+  Color #555555
+}
+
+title Yocto Driver Sample — Yocto Project Architecture Overview
+
+' ============================================================
+' BUILD-TIME: Development Host
+' ============================================================
+package "Development Host (Build-Time)" as BuildTime #BUILD_COLOR {
+
+  rectangle "Yocto Build Environment" as Yocto {
+    component "BitBake\nTask Executor" as BitBake
+    component "Poky\n(Reference Distro)" as Poky
+  }
+
+  rectangle "Upstream Layers (kirkstone)" as Upstream {
+    component "meta-freescale" as MF
+    component "meta-imx" as MIMX
+    component "meta-openembedded" as MOE
+  }
+
+  rectangle "Custom Layer: meta-yocto_driver_sample" as CustomLayer {
+    component "layer.conf\n(priority 5)" as LayerConf
+
+    package "Recipes" as Recipes {
+      component "mock-adxl345_1.0.bb\n(Kernel Module)" as KmRecipe #RECIPE_COLOR
+      component "mock-adxl345-app.bb\n(User-Space App)" as AppRecipe #RECIPE_COLOR
+      component "yocto-driver-sample-image.bb\n(Final Image)" as ImgRecipe #RECIPE_COLOR
+    }
+  }
+
+  rectangle "Build Artifacts" as Artifacts {
+    component "mock_adxl345.ko" as KoFile #KERNEL_COLOR
+    component "mock-adxl345.dtbo" as DtboFile #KERNEL_COLOR
+    component "mock-adxl345-reader\n(ARM64 binary)" as BinaryFile #APP_COLOR
+    component "mock-adxl345-reader.service" as ServiceFile
+    component "yocto-driver-sample-image.wic.bz2\n(Bootable SD image)" as WicFile
+  }
+}
+
+' Build flow: Recipes produce artifacts
+KmRecipe --> KoFile         : "produces"
+KmRecipe --> DtboFile       : "produces (dtc)"
+AppRecipe --> BinaryFile    : "produces"
+AppRecipe --> ServiceFile   : "produces"
+ImgRecipe --> WicFile       : "produces"
+
+' Recipe dependencies
+KmRecipe -left-> BitBake        : "uses module.bbclass"
+KmRecipe -left-> Poky           : "DEPENDS virtual/kernel"
+KmRecipe ..> MF                 : "DT includes"
+AppRecipe -left-> BitBake       : "uses"
+AppRecipe ..> KmRecipe          : "RDEPENDS (runtime)"
+
+' ============================================================
+' RUN-TIME: i.MX8M Mini EVK Target
+' ============================================================
+package "Target Hardware — i.MX8M Mini EVK (Run-Time)" as RunTime #RUNTIME_COLOR {
+
+  rectangle "Boot Chain" as BootChain {
+    component "U-Boot\nBootloader" as UBoot
+    component "Linux Kernel\n5.15 (imx)" as Kernel
+  }
+
+  rectangle "Kernel Space" as KernelSpace {
+    component "Platform Bus\n(driver matching)" as PlatformBus
+    component "mock_adxl345.ko\nPlatform Driver" as MockDriver #KERNEL_COLOR
+    component "IIO Subsystem\n(Industrial I/O)" as IIOSub
+    component "mock-adxl345.dtbo\nDevice Tree Overlay" as DtOverlay #KERNEL_COLOR
+  }
+
+  rectangle "Sysfs Interface" as Sysfs {
+    component "in_accel_x_raw\nin_accel_y_raw\nin_accel_z_raw\nin_accel_scale" as SysfsFiles
+  }
+
+  rectangle "User Space" as UserSpace {
+    component "systemd\n(PID 1)" as Systemd
+    component "mock-adxl345-reader\n(IIO sysfs reader)" as ReaderApp #APP_COLOR
+  }
+}
+
+' Boot chain
+UBoot -down-> Kernel : "loads + boots"
+Kernel -down-> DtOverlay : "applies overlay"
+DtOverlay -down-> PlatformBus : "creates platform_device\ncompatible = \"yocto_driver_sample,mock-adxl345\""
+
+' Driver binding
+MockDriver -up-> PlatformBus : "registers driver with\nof_match_table"
+PlatformBus -up-> MockDriver : "matches + calls probe()"
+MockDriver -up-> IIOSub : "devm_iio_device_register()"
+
+' Data flow
+IIOSub -down-> SysfsFiles : "exposes via sysfs"
+SysfsFiles -down-> ReaderApp : "reads every 2 seconds"
+Systemd -down-> ReaderApp : "manages service\n(auto-start + restart)"
+
+' ============================================================
+' NOTES
+' ============================================================
+note right of BuildTime
+  **Key Insight for Newcomers:**
+  The Yocto build system cross-compiles
+  everything for the ARM64 target.
+  Recipes declare dependencies (DEPENDS
+  for build-time, RDEPENDS for runtime).
+  The final WIC image is written to SD
+  card and booted on the board.
+end note
+
+note right of RunTime
+  **Key Insight for Newcomers:**
+  The DT overlay creates a platform device
+  that matches the driver's of_match_table.
+  The probe() function registers with IIO.
+  The user-space app reads raw values via
+  sysfs and scales them to milli-g.
+end note
+
+@enduml

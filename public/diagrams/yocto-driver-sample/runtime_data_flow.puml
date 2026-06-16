@@ -1,0 +1,174 @@
+@startuml
+' =============================================================================
+' Runtime Data Flow — From Kernel Module to User-Space Application
+'
+' Shows how simulated acceleration data flows from the mock-adxl345 driver
+' through the IIO subsystem and sysfs to the reader application.
+'
+' Use: plantuml runtime_data_flow.puml
+' =============================================================================
+
+!define KERNEL_COLOR F8CECC
+!define USER_COLOR DAE8FC
+!define IIO_COLOR E1D5E7
+!define SYSFS_COLOR FFF2CC
+
+skinparam component {
+  BorderColor #333333
+  FontSize 12
+}
+
+skinparam rectangle {
+  BorderColor #333333
+  FontSize 12
+}
+
+skinparam package {
+  FontSize 13
+  FontStyle bold
+}
+
+title Runtime Data Flow — Kernel Module → IIO → User-Space App
+
+' ============================================================
+' KERNEL SPACE
+' ============================================================
+package "Kernel Space" as KernelSpace #KERNEL_COLOR {
+
+  rectangle "mock_adxl345.ko" as Driver {
+    component "mock_adxl345_probe()\nInitializes driver" as Probe
+    component "mock_adxl345_read_raw()\nIIO read callback" as ReadRaw
+    component "sine_milli()\nParabolic sine approx\n(no float math)" as SineGen
+    component "ktime_get_ns()\nTime reference" as Timer
+  }
+
+  rectangle "IIO Subsystem" as IIO #IIO_COLOR {
+    component "iio_dev\n(device struct)" as IioDev
+    component "iio_chan_spec[3]\n(X, Y, Z channels)" as Channels
+    component "iio_info\n(.read_raw callback)" as IioInfo
+    component "/sys/bus/iio/devices/\niio:device0/" as IioDevice
+  }
+
+  rectangle "sysfs VFS Layer" as Sysfs #SYSFS_COLOR {
+    component "in_accel_x_raw\n(read returns mg)" as SysfsX
+    component "in_accel_y_raw\n(read returns mg)" as SysfsY
+    component "in_accel_z_raw\n(read returns mg)" as SysfsZ
+    component "in_accel_scale\n(4000 ug/LSB)" as SysfsScale
+    component "name\n→ \"mock-adxl345\"" as SysfsName
+  }
+}
+
+' ============================================================
+' KERNEL / USER BOUNDARY
+' ============================================================
+rectangle "Kernel / User Boundary\n(sysfs file read)" as Boundary #F5F5F5 {
+}
+
+' ============================================================
+' USER SPACE
+' ============================================================
+package "User Space" as UserSpace #USER_COLOR {
+
+  component "systemd\nmock-adxl345-reader.service\n\nType=simple\nRestart=on-failure\nUser=root" as SystemdSvc
+
+  rectangle "mock-adxl345-reader\n(User-space application)" as ReaderApp {
+    component "main()\nInfinite loop" as MainLoop
+    component "read_sysfs_int()\nParses integer from file" as ReadFn
+    component "value_mg = raw ×\nscale / 1000\nConvert to milli-g" as Convert
+    component "printf()\nFormatted output" as PrintFn
+    component "sleep(2)\n2-second interval" as SleepFn
+  }
+
+  rectangle "Output" as Output {
+    component "stdout / journal" as Stdout
+    component "journalctl -u\nmock-adxl345-reader -f" as Journal
+  }
+}
+
+' ============================================================
+' DATA FLOW (numbered steps)
+' ============================================================
+
+' 1. Timer generates time-based phase
+Timer -down-> SineGen : "① elapsed_ns\n(relative to probe time)"
+
+' 2. Sine generator creates mock data
+SineGen -down-> ReadRaw : "② returns ±1000 mg\n(sine wave on X/Y,\n~980 mg on Z)"
+
+' 3. Probe registers with IIO
+Probe -down-> IioDev : "③ devm_iio_device_register()"
+Probe -down-> Channels : "③ sets up 3 accel channels"
+
+' 4. IIO connects callback
+IioDev -down-> IioInfo : "④ iio_info.read_raw =\nmock_adxl345_read_raw"
+
+' 5. IIO exposes sysfs attributes
+IioDevice -down-> SysfsX : "⑤ creates"
+IioDevice -down-> SysfsY : "⑤ creates"
+IioDevice -down-> SysfsZ : "⑤ creates"
+IioDevice -down-> SysfsScale : "⑤ creates"
+IioDevice -down-> SysfsName : "⑤ creates"
+
+' 6. sysfs read path (on every application read)
+SysfsX -down-> Boundary : "⑥ read() syscall"
+SysfsY -down-> Boundary : "⑥ read() syscall"
+SysfsZ -down-> Boundary : "⑥ read() syscall"
+
+' 7. IIO callback invoked by sysfs read
+Boundary -down-> ReadRaw : "⑦ IIO core calls\n.read_raw callback"
+ReadRaw -up-> SineGen : "⑦ per-channel sample"
+ReadRaw -up-> SysfsX : "⑦ returns int value"
+
+' 8. Application reads sysfs files
+Boundary -down-> ReadFn : "⑧ fopen() / fscanf()"
+ReadFn -down-> MainLoop : "⑧ returns raw int"
+
+' 9-10. Application processing loop
+MainLoop -down-> ReadFn : "⑨ reads X, Y, Z, scale"
+MainLoop -down-> Convert : "⑨ raw × scale / 1000"
+Convert -down-> PrintFn : "⑩ formatted string"
+MainLoop -down-> SleepFn : "⑨ sleep(2)"
+
+' 11. Output
+PrintFn -down-> Stdout : "⑩ Time  X_raw  Y_raw...\n  0s    487   -809 ...\n  2s   -159    951 ..."
+
+' 12. systemd manages lifecycle
+SystemdSvc -down-> ReaderApp : "⑪ starts at boot\nrestarts on failure"
+
+' ============================================================
+' NOTES
+' ============================================================
+note left of Boundary
+  **Step ⑦ detail:**
+  The sysfs read triggers a
+  call chain:
+  VFS → IIO core → driver's
+  read_raw() → sine_milli()
+  This is synchronous: the
+  application blocks until
+  the value is generated.
+end note
+
+note right of PrintFn
+  **Console output format:**
+
+  Time     X_raw   Y_raw ...
+  -------- -------- --------
+  0        487     -809   ...
+  2       -159      951   ...
+  4       -809      487   ...
+
+  For the mock driver, raw
+  values ARE in milli-g.
+  For a real ADXL345, raw
+  values are ADC counts and
+  need scale conversion.
+end note
+
+note bottom of Output
+  **Checking the service on target:**
+  systemctl status mock-adxl345-reader
+  journalctl -u mock-adxl345-reader -f
+end note
+
+@enduml

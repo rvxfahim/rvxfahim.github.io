@@ -1,0 +1,103 @@
+@startuml
+'
+' HLT-MOT Primary Object State Machine
+' Shows the lifecycle of the primary tracked object (ID 1)
+' through selection, active tracking, loss, and re-acquisition.
+'
+
+skinparam backgroundColor white
+skinparam stateBackgroundColor aliceblue
+skinparam stateBorderColor black
+skinparam stateArrowColor black
+skinparam noteBackgroundColor lemonchiffon
+skinparam noteBorderColor darkgoldenrod
+skinparam titleFontSize 18
+
+title "Primary Object (ID 1) Lifecycle"
+
+' ============================================================
+' State definitions
+' ============================================================
+
+state "SELECTING" as SEL #lightyellow
+SEL : User chooses target\nby mouse click or\nnumber key (1-9)
+
+state "AWAITING_FIRST_DETECTION" as WAIT #lightyellow
+WAIT : set_primary_object_by_bbox() stores\nselected bbox, waiting_for_selection=False
+
+state "ACTIVE_TRACKING" as ACT #lightgreen
+ACT : primary_object_active=True\nID is fixed to 1
+
+state "LOST" as LOST #lightpink
+LOST : primary_object_active=False\nEnter primary-only recovery mode
+
+state "REACQUIRING" as REACQ #lightcyan
+REACQ : Feature match candidate found\nRunning consistency checks
+
+state "REACQUIRED" as REACQ_OK #lightgreen
+REACQ_OK : Match accepted and verified\nGalleries merged
+
+state "FALSE_MATCH" as FALSE #lightpink
+FALSE : Match rejected (IoU < 0.1)\nResume search
+
+' ============================================================
+' Transitions
+' ============================================================
+
+[*] --> SEL : python main.py starts
+SEL --> WAIT : User clicks on detection\nor presses number key
+WAIT --> ACT : Next frame: DeepSORT track\nwith IoU > 0.1 against\npending_primary_bbox
+
+ACT --> ACT : Per-frame: verify IoU\ncache features as GPU tensor\nupdate motion prediction
+ACT --> LOST : No detection for\n> max_age DeepSORT frames
+
+LOST --> REACQ : Offline Re-ID finds candidate:\ncosine < 0.25\nspatial < 300px
+LOST --> LOST : No match found\n(all distances >= threshold)
+
+REACQ --> REACQ_OK : IoU >= 0.1 within 5 frames\nconsistent spatial check
+REACQ --> FALSE : IoU < 0.1 within 5 frames\nspatial inconsistency
+
+FALSE --> LOST : False positive\nreject and resume
+
+REACQ_OK --> ACT : Match confirmed\nresume normal tracking
+REACQ_OK --> LOST : Immediately lost again\n(false alarm)
+
+SEL --> [*] : User presses 'q'
+LOST --> SEL : Recovery timeout\nor user resets
+
+' ============================================================
+' Notes with technical details
+' ============================================================
+
+note right of ACT
+  == Motion Prediction ==
+  _update_primary_motion_prediction():
+  avg velocity of last 5 positions
+  pred = last_pos + avg_velocity
+  Stored in kalman_predictions[1]
+
+  == Feature Cache ==
+  _primary_features_tensor stored as GPU
+  tensor via F.normalize() + torch.mm()
+  Updated when
+  _primary_features_need_update = True
+end note
+
+note right of LOST
+  == Primary-Only Offline Re-ID ==
+  Kalman prediction filters
+  inactive candidates < 300px
+  Batch GPU distance matrix
+  merge_threshold relaxed: 0.25
+  IoU threshold: 0.8x default
+end note
+
+note right of REACQ
+  == Consistency Checks ==
+  1. Cosine distance < threshold
+  2. Spatial distance cap: 200px
+  3. IoU with predicted bbox > 0.1
+  4. Frames since last seen < 30
+end note
+
+@enduml

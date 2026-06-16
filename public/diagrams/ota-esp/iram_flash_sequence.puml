@@ -1,0 +1,83 @@
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter
+skinparam sequence {
+  ArrowColor #333333
+  LifeLineBorderColor #1A73E8
+  LifeLineBackgroundColor #E8F0FE
+}
+skinparam participant {
+  BackgroundColor #F3E8FD
+}
+skinparam note {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+
+title IRAM Flash Routine — Cache Toggle Sequence
+
+participant "Main Core\n(Core 0, IRAM)" as Core0
+participant "PSRAM\n(external, cached)" as PSRAM
+participant "DRAM Buffer\n[4KB, DRAM_ATTR]" as DRAM
+participant "Cache MMU\n(flash + PSRAM)" as Cache
+participant "SPI Flash\n(app0 partition)" as Flash
+participant "Mask ROM\n(spiflash functions)" as ROM
+
+note over Core0
+  iram_flash_operation()
+  is declared IRAM_ATTR —
+  all code runs from IRAM
+  when cache is disabled.
+end note
+
+participant "Core 1\n(parked in IRAM)" as Core1
+
+Core0 -> Core1 : esp_ipc_call(park_fn)
+Core1 -> Core1 : portDISABLE_INTERRUPTS()
+Core1 -> Core1 : while(true) {} [IRAM_ATTR]
+note right of Core1 : Never touches flash.\nSafe to park indefinitely.
+
+loop for each 4KB sector [0..N]
+  Core0 -> Cache : enable read path
+  Core0 -> PSRAM : memcpy chunk to DRAM buffer
+  PSRAM --> DRAM : 4KB data
+  Core0 -> Core0 : ets_printf("Writing sector %d...")
+
+  Core0 -> Cache : Cache_Read_Disable_rom(0)
+  note over Cache, Flash
+    Flash cache disconnected.
+    PSRAM also inaccessible now.
+    Only IRAM + DRAM + ROM reachable.
+  end note
+
+  Core0 -> ROM : esp_rom_spiflash_erase_sector(target_addr)
+  ROM -> Flash : erase 4KB sector
+  Flash --> ROM : done
+
+  Core0 -> ROM : esp_rom_spiflash_write(target_addr, dram_buf, 4096)
+  ROM -> Flash : write 4KB from DRAM
+  Flash --> ROM : done
+
+  Core0 -> Cache : Cache_Read_Enable_rom(0)
+  note over Cache, Flash
+    Cache reconnected.
+    PSRAM accessible again.
+  end note
+
+  Core0 -> Core0 : target_addr += 4096
+end
+
+Core0 -> Core0 : Reconfigure WDT for system reset
+Core0 -> Core0 : while(true) {} // wait for WDT
+
+note over Core0, ROM
+  ROM functions always accessible:
+  - Cache_Read_Disable_rom
+  - Cache_Read_Enable_rom
+  - esp_rom_spiflash_erase_sector
+  - esp_rom_spiflash_write
+  - ets_printf
+  These live in mask ROM, not flash.
+end note
+
+@enduml

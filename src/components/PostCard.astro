@@ -1,0 +1,100 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+export interface Props {
+  post: CollectionEntry<'posts'>;
+}
+
+const { post } = Astro.props;
+const { title, date, excerpt, category, github, demo_url, technologies } = post.data;
+
+const formattedDate = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  year: 'numeric',
+}).format(date);
+
+const maxVisibleTags = 4;
+const visibleTags = technologies?.slice(0, maxVisibleTags) ?? [];
+const overflowCount = technologies ? technologies.length - maxVisibleTags : 0;
+---
+
+<article class="bg-(--color-surface) rounded-lg border border-(--color-border) motion-safe:hover:scale-[1.02] hover:border-(--color-accent)/30 transition-all duration-200 p-6 flex flex-col h-full">
+  <time class="font-utility text-xs text-(--color-text-muted) block" datetime={date.toISOString()}>
+    {formattedDate}
+  </time>
+  <h3 class="font-display font-bold text-(--text-h3) mt-2">
+    <a
+      href={`/posts/${post.id}`}
+      class="text-(--color-text) hover:text-(--color-accent) transition-colors"
+    >
+      {title}
+    </a>
+  </h3>
+  <span class="category-pill font-utility text-xs px-3 py-0.5 rounded-full inline-block w-fit mt-2" data-category={category}>
+    {category}
+  </span>
+  <p class="text-(--color-text-muted) mt-3 line-clamp-2">
+    {excerpt}
+  </p>
+  {technologies && technologies.length > 0 && (
+    <div class="flex flex-wrap gap-2 mt-4">
+      {visibleTags.map((tech) => (
+        <span class="font-utility text-xs px-2 py-0.5 rounded-full bg-(--color-surface-hover) border border-(--color-border) text-(--color-text-muted)">
+          {tech}
+        </span>
+      ))}
+      {overflowCount > 0 && (
+        <span class="font-utility text-xs px-2 py-0.5 rounded-full bg-(--color-surface-hover) border border-(--color-border) text-(--color-text-muted)">
+          +{overflowCount}
+        </span>
+      )}
+    </div>
+  )}
+  <div class="flex items-center gap-4 mt-auto pt-4">
+    <a
+      href={`/posts/${post.id}`}
+      class="font-utility text-sm text-(--color-accent) hover:text-(--color-accent-warm) transition-colors"
+    >
+      Read →
+    </a>
+    {demo_url && (
+      <a
+        href={demo_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="font-utility text-sm text-(--color-accent-green) hover:brightness-110 transition-all"
+      >
+        Live Demo ↗
+      </a>
+    )}
+    {github && (
+      <a
+        href={github}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="font-utility text-sm text-(--color-text-muted) hover:text-(--color-accent) transition-colors ml-auto"
+      >
+        GitHub ↗
+      </a>
+    )}
+  </div>
+</article>
+
+<style>
+  .category-pill[data-category="robotics"] {
+    background-color: color-mix(in srgb, var(--color-accent-green) 20%, transparent);
+    color: var(--color-accent-green);
+  }
+  .category-pill[data-category="embedded"] {
+    background-color: color-mix(in srgb, var(--color-accent-warm) 20%, transparent);
+    color: var(--color-accent-warm);
+  }
+  .category-pill[data-category="computer-vision"] {
+    background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: var(--color-accent);
+  }
+  .category-pill[data-category="web"] {
+    background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: var(--color-accent);
+  }
+</style>

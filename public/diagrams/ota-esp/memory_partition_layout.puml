@@ -1,0 +1,85 @@
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter
+skinparam rectangle {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 12
+}
+skinparam note {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontSize 11
+}
+
+title ESP32 Memory and Partition Layout
+
+rectangle "ESP32 Chip" as Chip {
+
+  rectangle "Internal RAM\n(always accessible)" as Internal {
+    rectangle "IRAM\n(instruction RAM)\n~128KB" as IRAM
+    rectangle "DRAM\n(data RAM)\n~320KB total" as DRAM
+
+    IRAM -[hidden]right- DRAM
+  }
+
+  rectangle "External RAM\n(cache-dependent)" as ExtRAM {
+    rectangle "PSRAM\n~4MB / 8MB" as PSRAM
+    note right of PSRAM
+      Holds downloaded firmware.bin
+      Accessed via ps_malloc()
+      Inaccessible when flash cache OFF
+    end note
+  }
+
+  rectangle "SPI Flash\n(4MB)" as Flash {
+    rectangle "Bootloader\n0x1000 (4KB)" as Boot
+    rectangle "Partition Table\n0x8000 (4KB)" as PT
+    rectangle "NVS\n0x9000 (20KB)" as NVS
+    rectangle "factory / app0\n0x10000 – 0x400000\n(~3.94 MB)" as App0
+  }
+
+  rectangle "Mask ROM\n(always accessible)" as ROM {
+    rectangle "esp_rom_spiflash_*\nSPI flash functions"
+    rectangle "Cache_Read_*\ncache control"
+    rectangle "ets_printf\nbare-metal printf"
+  }
+}
+
+rectangle "Standard Dual-OTA Layout\n(comparison)" as StdOTA #FFF3E0 {
+  rectangle "ota_0\n~1.8MB" as OTA0
+  rectangle "ota_1\n~1.8MB" as OTA1
+  rectangle "otadata\n8KB" as OTD
+}
+
+note bottom of StdOTA
+  Standard ESP32 OTA: two app slots
+  + metadata partition.
+  ~3.6MB reserved, ~1.8MB usable each.
+  This project: single factory partition
+  with ~3.94MB usable app space.
+  Reclaims ~2.1MB vs dual-OTA.
+end note
+
+note right of DRAM
+  DRAM_ATTR buffer [4KB]:
+  Staging area between PSRAM
+  and flash. Lives in DRAM so
+  accessible regardless of cache state.
+end note
+
+note right of IRAM
+  iram_flash_operation()
+  runs here. All code in the
+  critical section must be
+  marked IRAM_ATTR.
+end note
+
+note bottom of ROM
+  Silicon mask ROM functions
+  are the foundation. They are
+  hardwired at manufacture and
+  never depend on flash cache.
+end note
+
+@enduml

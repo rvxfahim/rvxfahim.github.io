@@ -1,0 +1,104 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+export interface Props {
+  post: CollectionEntry<'posts'>;
+}
+
+const { post } = Astro.props;
+const { title, date, excerpt, summary, category, github, demo_video, technologies } = post.data;
+
+const formattedDate = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  year: 'numeric',
+}).format(date);
+---
+
+<article class="bg-(--color-surface) rounded-lg border border-(--color-border) hover:border-(--color-accent)/30 transition-colors overflow-hidden">
+  <div class={demo_video ? 'grid grid-cols-1 md:grid-cols-2 gap-0' : ''}>
+    {demo_video && (
+      <div class="md:h-full">
+        <video
+          class="w-full aspect-video md:aspect-auto md:h-full md:object-cover"
+          controls
+          autoplay
+          muted
+          loop
+          playsinline
+        >
+          <source src={demo_video} type="video/mp4" />
+        </video>
+      </div>
+    )}
+    <div class="p-8">
+      <span class="font-utility text-xs text-(--color-accent) uppercase tracking-wider">
+        ★ Featured Project
+      </span>
+      <h2 class="font-display font-bold text-(--text-h2) mt-3">
+        <a
+          href={`/posts/${post.id}`}
+          class="text-(--color-text) hover:text-(--color-accent) transition-colors"
+        >
+          {title}
+        </a>
+      </h2>
+      <div class="flex items-center gap-4 mt-3">
+        <time class="font-utility text-sm text-(--color-text-muted)" datetime={date.toISOString()}>
+          {formattedDate}
+        </time>
+        <span class="category-pill font-utility text-xs px-3 py-0.5 rounded-full" data-category={category}>
+          {category}
+        </span>
+      </div>
+      <p class="text-(--color-text-muted) mt-4 leading-relaxed">
+        {summary || excerpt}
+      </p>
+      {technologies && technologies.length > 0 && (
+        <div class="flex flex-wrap gap-2 mt-5">
+          {technologies.map((tech) => (
+            <span class="font-utility text-xs px-3 py-1 rounded-full bg-(--color-surface-hover) border border-(--color-border) text-(--color-text-muted)">
+              {tech}
+            </span>
+          ))}
+        </div>
+      )}
+      <div class="flex items-center gap-6 mt-6 pt-4 border-t border-(--color-border)">
+        <a
+          href={`/posts/${post.id}`}
+          class="font-utility text-sm text-(--color-accent) hover:text-(--color-accent-warm) transition-colors"
+        >
+          Read more →
+        </a>
+        {github && (
+          <a
+            href={github}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-utility text-sm text-(--color-text-muted) hover:text-(--color-accent) transition-colors"
+          >
+            GitHub ↗
+          </a>
+        )}
+      </div>
+    </div>
+  </div>
+</article>
+
+<style>
+  .category-pill[data-category="robotics"] {
+    background-color: color-mix(in srgb, var(--color-accent-green) 20%, transparent);
+    color: var(--color-accent-green);
+  }
+  .category-pill[data-category="embedded"] {
+    background-color: color-mix(in srgb, var(--color-accent-warm) 20%, transparent);
+    color: var(--color-accent-warm);
+  }
+  .category-pill[data-category="computer-vision"] {
+    background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: var(--color-accent);
+  }
+  .category-pill[data-category="web"] {
+    background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: var(--color-accent);
+  }
+</style>

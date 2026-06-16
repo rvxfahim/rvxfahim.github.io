@@ -1,0 +1,72 @@
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter
+skinparam component {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 12
+}
+skinparam database {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontSize 12
+}
+skinparam note {
+  BackgroundColor #F3E8FD
+  BorderColor #9334E6
+  FontSize 11
+}
+
+title Voxelize Navmesh — ROS 2 Node and Topic Graph
+
+component "voxelizer_node\n[C++]" as VoxNode
+component "simulate_obstacle_cosim\n[Python]" as ObsNode
+component "simulate_crowd_cosim\n[Python]" as CrowdNode
+component "fake_robot_pose\n[Python]" as FakePose
+
+database "/front_3d_lidar\n/lidar_points" as LidarTopic
+database "/robotPose\n(Odometry)" as PoseTopic
+database "/initial_map\n(PointCloud2)" as MapTopic
+database "/foreground_cloud\n(PointCloud2)" as FgTopic
+database "/full_cloud\n(PointCloud2)" as FullTopic
+database "/cmd_vel\n(Twist)" as CmdVel
+database "/markers\n(MarkerArray)" as Markers
+
+LidarTopic --> VoxNode : subscribe
+PoseTopic --> VoxNode : subscribe
+MapTopic --> VoxNode : subscribe (once)
+VoxNode --> FgTopic : publish
+VoxNode --> FullTopic : publish
+VoxNode --> Markers : publish
+
+FgTopic --> ObsNode : subscribe
+FgTopic --> CrowdNode : subscribe
+PoseTopic --> ObsNode : subscribe
+PoseTopic --> CrowdNode : subscribe
+
+ObsNode --> CmdVel : publish
+CrowdNode --> CmdVel : publish
+
+FakePose --> PoseTopic : publish (test)
+
+note top of VoxNode
+  Launch: voxelizer.launch.py
+  Params: leaf_size, map_frame,
+  chebyshev_radius, range_filter, etc.
+end note
+
+note bottom of ObsNode
+  Launch: simulate_obstacle_cosim.launch.py
+  Params: cluster_voxel_size, cylinder_padding,
+  max_obstacles, obstacle_decay_time
+  Mode: dyn_obstacle_source = "obstacle"
+end note
+
+note bottom of CrowdNode
+  Launch: simulate_crowd_cosim.launch.py
+  Params: dyn_obstacle_count, dyn_max_life,
+  agent_radius, agent_height
+  Mode: dyn_obstacle_source = "crowd"
+end note
+
+@enduml

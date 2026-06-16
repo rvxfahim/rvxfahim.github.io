@@ -1,0 +1,163 @@
+@startuml
+' =============================================================================
+' Yocto Recipe Dependency Graph
+'
+' Shows build-time (DEPENDS) vs runtime (RDEPENDS) relationships between
+' all recipes that participate in yocto-driver-sample-image.
+'
+' Solid arrows  = DEPENDS (must be built first)
+' Dashed arrows = RDEPENDS (must be in rootfs, not needed at build time)
+' Dotted arrows = INSTALLS (image includes the package)
+'
+' Use: plantuml recipe_dependency_graph.puml
+' =============================================================================
+
+!define IMG_COLOR D5E8D4
+!define MOD_COLOR F8CECC
+!define APP_COLOR DAE8FC
+!define KERNEL_COLOR E1D5E7
+!define UPSTREAM_COLOR F5F5F5
+
+skinparam component {
+  BorderColor #333333
+  FontSize 12
+}
+
+skinparam package {
+  BackgroundColor #F9F9F9
+  BorderColor #999999
+  FontSize 12
+}
+
+skinparam arrow {
+  Color #555555
+}
+
+title Yocto Recipe Dependency Graph — DEPENDS vs RDEPENDS
+
+' ============================================================
+' Top Level: The Final Image
+' ============================================================
+component "yocto-driver-sample-image.bb" as Image #IMG_COLOR
+note right of Image
+  **IMAGE_INSTALL** = "
+    packagegroup-core-boot
+    kernel-modules
+    mock-adxl345
+    mock-adxl345-app
+  "
+  IMAGE_FSTYPES = "tar.bz2 ext4 wic.bz2"
+end note
+
+' ============================================================
+' Upstream packages (from Poky / meta layers)
+' ============================================================
+package "Upstream Packages\n(from poky / meta layers)" as Upstream #UPSTREAM_COLOR {
+  component "packagegroup-core-boot" as PkgBoot
+  component "kernel-modules" as KernelMods
+  component "virtual/kernel\n(Linux 5.15)" as VirtKernel
+  component "dtc-native\n(Host Device Tree\nCompiler)" as DtcNative
+}
+
+' ============================================================
+' Custom Recipes (meta-yocto_driver_sample)
+' ============================================================
+package "Custom Layer: meta-yocto_driver_sample" as Custom #FFFFFF {
+
+  component "mock-adxl345\nmock-adxl345_1.0.bb" as KmRecipe #MOD_COLOR
+  note right of KmRecipe
+    **Out-of-tree kernel module:**
+    - mock_adxl345.ko
+    - mock-adxl345.dtbo
+    Produces: mock-adxl345-1.0.rpm
+    Auto-load: KERNEL_MODULE_AUTOLOAD
+  end note
+
+  component "mock-adxl345-app\nmock-adxl345-app.bb" as AppRecipe #APP_COLOR
+  note right of AppRecipe
+    **User-space application:**
+    - mock-adxl345-reader binary
+    - mock-adxl345-reader.service
+    Produces: mock-adxl345-app.rpm
+    Auto-start: SYSTEMD_AUTO_ENABLE
+  end note
+}
+
+' ============================================================
+' Dependency Arrows
+' ============================================================
+
+' Image includes all packages
+Image --> PkgBoot : "INSTALLS"
+Image --> KernelMods : "INSTALLS"
+Image --> KmRecipe : "INSTALLS (mock-adxl345)"
+Image --> AppRecipe : "INSTALLS (mock-adxl345-app)"
+
+' Kernel module build-time deps
+KmRecipe --> VirtKernel : "DEPENDS (build-time)"
+KmRecipe --> DtcNative : "DEPENDS (build-time)"
+
+note on link #E1D5E7
+  **DEPENDS = "virtual/kernel dtc-native"**
+  module.bbclass needs the kernel
+  build tree for cross-compiling .ko.
+  dtc-native compiles the DT overlay.
+  Both must finish building before
+  mock-adxl345 can start.
+end note
+
+' Kernel module produces kernel modules
+VirtKernel --> KernelMods : "provides"
+VirtKernel --> KmRecipe : "provides build headers"
+
+' Application runtime dep only — key distinction!
+AppRecipe .left.> KmRecipe : "RDEPENDS (runtime only)"
+note on link #DAE8FC
+  **RDEPENDS = "mock-adxl345"**
+
+  No build-time dependency! The app
+  can compile without the kernel module
+  being built. DEPENDS would force
+  serialization but RDEPENDS allows
+  parallel builds.
+
+  RDEPENDS ensures the module package
+  is installed into the rootfs alongside
+  the app at image assembly time.
+end note
+
+' ============================================================
+' Parallel Build Opportunity Callout
+' ============================================================
+note bottom of Custom
+  **Parallel Build Opportunity:**
+  Because mock-adxl345-app has only an
+  RDEPENDS (not DEPENDS) on mock-adxl345,
+  both recipes can compile simultaneously
+  once virtual/kernel and dtc-native finish.
+  This saves build time on multi-core hosts.
+end note
+
+' ============================================================
+' Legend
+' ============================================================
+rectangle "Legend" as Legend #FFFFFF {
+  component "DEPENDS\n(Build-time)" as DependsLegend
+  component "RDEPENDS\n(Runtime)" as RdependsLegend
+  component "INSTALLS\n(Image includes)" as InstallsLegend
+}
+
+note bottom of Legend
+  **DEPENDS:** Recipe B must finish building before
+  Recipe A can start. Uses the kernel build tree,
+  native tools, or libraries at compile time.
+
+  **RDEPENDS:** Recipe A needs Recipe B's package
+  in the rootfs at runtime. Does NOT block the
+  build of Recipe A.
+
+  **INSTALLS:** The image recipe lists packages
+  to include in the final root filesystem.
+end note
+
+@enduml

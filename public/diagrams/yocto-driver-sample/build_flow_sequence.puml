@@ -1,0 +1,188 @@
+@startuml
+' =============================================================================
+' Build Flow Sequence — "bitbake yocto-driver-sample-image"
+'
+' Shows the order of operations, dependency resolution, and parallel build
+' opportunities when building the full Yocto image.
+'
+' Use: plantuml build_flow_sequence.puml
+' =============================================================================
+
+skinparam sequence {
+  ArrowColor #555555
+  ActorBorderColor #333333
+  LifeLineBorderColor #444444
+  LifeLineBackgroundColor #D5E8D4
+  ParticipantBorderColor #333333
+  ParticipantBackgroundColor #DAE8FC
+  ParticipantFontSize 13
+  ParticipantFontStyle bold
+}
+
+title BitBake Build Flow — bitbake yocto-driver-sample-image
+
+actor "User" as User
+participant "BitBake\n(Orchestrator)" as BB #A9DCDF
+participant "dtc-native\n(Host DT Compiler)" as DTC #E1D5E7
+participant "virtual/kernel\n(Linux Kernel)" as Kernel #F8CECC
+participant "mock-adxl345\n(Kernel Module)" as Mod #F8CECC
+participant "mock-adxl345-app\n(User App)" as App #DAE8FC
+participant "yocto-driver-sample-image\n(Image Assembly)" as Img #D5E8D4
+
+' ============================================================
+' Phase 0: User invokes build
+' ============================================================
+User -> BB : bitbake yocto-driver-sample-image
+activate BB #A9DCDF
+
+BB -> BB : Parse layer configs (bblayers.conf)
+BB -> BB : Parse all .bb recipes
+BB -> BB : Resolve dependency graph
+note right of BB
+  BitBake reads:
+  - meta-yocto_driver_sample/conf/layer.conf
+  - Each recipe's DEPENDS / RDEPENDS
+  - Builds DAG of tasks
+end note
+
+' ============================================================
+' Phase 1: Build native tools and kernel (parallel)
+' ============================================================
+BB -> DTC : Schedule (no inter-recipe deps)
+activate DTC #E1D5E7
+DTC -> DTC : do_fetch (dtc source)
+DTC -> DTC : do_configure
+DTC -> DTC : do_compile
+DTC -> DTC : do_install (host tools)
+DTC -> DTC : do_package
+DTC --> BB : dtc-native complete
+deactivate DTC
+
+BB -> Kernel : Schedule (independent of custom recipes)
+activate Kernel #F8CECC
+Kernel -> Kernel : do_fetch (linux-5.16.tar.xz)
+Kernel -> Kernel : do_unpack
+Kernel -> Kernel : do_patch (kernel config)
+Kernel -> Kernel : do_configure (defconfig + fragments)
+Kernel -> Kernel : do_compile (vmlinux + modules)
+Kernel -> Kernel : do_install (modules to staging)
+Kernel -> Kernel : do_package (kernel + modules RPMs)
+Kernel --> BB : virtual/kernel complete
+deactivate Kernel
+
+note right of BB
+  dtc-native and virtual/kernel
+  have no interdependencies and
+  can build in parallel on a
+  multi-core host.
+end note
+
+' ============================================================
+' Phase 2: Build custom kernel module
+' ============================================================
+BB -> Mod : Schedule (after kernel + dtc-native)
+activate Mod #F8CECC
+
+Mod -> Mod : do_fetch (mock_adxl345.c, .h, Makefile, .dts)
+Mod -> Mod : do_unpack (copy to WORKDIR)
+
+note right of Mod
+  module.bbclass:
+  - Sets KERNEL_SRC to kernel build dir
+  - Provides cross-compilation toolchain
+  - Handles module signing if enabled
+end note
+
+Mod -> Mod : do_configure (no-op for module)
+Mod -> Mod : do_compile
+Mod -> Mod :   make -C $KERNEL_SRC M=$SRC modules
+Mod -> Mod :   dtc -@ -I dts -O dtb -o mock-adxl345.dtbo
+Mod -> Mod : do_install
+Mod -> Mod :   install .ko to /lib/modules/...
+Mod -> Mod :   install .dtbo to /boot/overlays/
+Mod -> Mod : do_package (mock-adxl345-1.0.rpm)
+Mod --> BB : mock-adxl345 complete
+deactivate Mod
+
+note right of BB
+  The module recipe compiles:
+  1. mock_adxl345.ko (kernel module)
+  2. mock-adxl345.dtbo (DT overlay)
+
+  KERNEL_MODULE_AUTOLOAD ensures
+  the module loads automatically
+  at boot time.
+end note
+
+' ============================================================
+' Phase 3: Build user-space app
+' ============================================================
+BB -> App : Schedule (no build-time dep on module)
+activate App #DAE8FC
+
+App -> App : do_fetch (.c, Makefile, .service)
+App -> App : do_unpack
+App -> App : do_compile (gcc -O2 -Wall)
+
+note right of App
+  RDEPENDS on mock-adxl345 means
+  the module package is listed as
+  a runtime dependency — but the
+  app can compile without it.
+  Module and app can build in parallel!
+end note
+
+App -> App : do_install
+App -> App :   install binary to /usr/bin/
+App -> App :   install .service to systemd unit dir
+App -> App : do_package (mock-adxl345-app.rpm)
+App --> BB : mock-adxl345-app complete
+deactivate App
+
+' ============================================================
+' Phase 4: Assemble the final image
+' ============================================================
+BB -> Img : Schedule (after all packages ready)
+activate Img #D5E8D4
+
+Img -> Img : do_fetch (no source)
+Img -> Img : do_configure (no-op for image)
+
+note right of Img
+  core-image.bbclass:
+  - Installs packagegroup-core-boot
+  - Installs kernel-modules (all modules)
+  - Installs mock-adxl345
+  - Installs mock-adxl345-app
+  - Handles systemd integration
+end note
+
+Img -> Img : do_rootfs
+Img -> Img :   Create root filesystem
+Img -> Img :   Install all packages via rpm
+Img -> Img :   Enable systemd services
+Img -> Img : do_image
+Img -> Img :   tar.bz2, ext4, wic.bz2
+Img -> Img : do_image_complete
+
+Img --> BB : yocto-driver-sample-image complete
+deactivate Img
+
+' ============================================================
+' Phase 5: Done
+' ============================================================
+BB --> User : Build complete — image at tmp/deploy/images/
+deactivate BB
+
+note right of Img
+  **Final outputs:**
+  - yocto-driver-sample-image-imx8mm-lpddr4-evk.wic.bz2
+  - yocto-driver-sample-image-imx8mm-lpddr4-evk.ext4
+  - yocto-driver-sample-image-imx8mm-lpddr4-evk.tar.bz2
+
+  Write .wic to SD card:
+    sudo dd if=<image>.wic of=/dev/sdX bs=1M
+    sync
+end note
+
+@enduml

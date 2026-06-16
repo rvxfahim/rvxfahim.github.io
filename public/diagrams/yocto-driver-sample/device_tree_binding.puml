@@ -1,0 +1,197 @@
+@startuml
+' =============================================================================
+' Device Tree + Driver Binding Flow
+'
+' Shows how the mock-adxl345.dts overlay causes the kernel to match and probe
+' the mock_adxl345 platform driver. Answers "how does the kernel know which
+' driver to use for a device described in the device tree?"
+'
+' Use: plantuml device_tree_binding.puml
+' =============================================================================
+
+!define BUILD_COLOR A9DCDF
+!define BOOT_COLOR FEF0D9
+!define KERNEL_COLOR F8CECC
+
+skinparam activity {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  FontSize 12
+}
+
+skinparam partition {
+  BackgroundColor #F5F5F5
+  BorderColor #666666
+  FontSize 14
+  FontStyle bold
+}
+
+title Device Tree + Driver Binding — From .dts to probe()
+
+' ============================================================
+' SWIMLANE 1: Build-Time (Development Host)
+' ============================================================
+partition "1. Build-Time (Development Host)" #BUILD_COLOR {
+
+  :**mock-adxl345.dts** source file;
+  note right
+    /dts-v1/;
+    /plugin/;
+    / {
+      fragment@0 {
+        target-path = "/";
+        __overlay__ {
+          mock-adxl345 {
+            compatible =
+              "yocto_driver_sample,mock-adxl345";
+            status = "okay";
+          };
+        };
+      };
+    };
+  end note
+
+  :**dtc** compiles DTS → DTBO;
+  note right
+    bitbake calls:
+    dtc -@ -I dts -O dtb
+      -o mock-adxl345.dtbo
+         mock-adxl345.dts
+
+    The -@ flag enables overlay
+    symbols for runtime application.
+  end note
+
+  :**mock-adxl345.dtbo** installed to
+    /boot/overlays/ in the rootfs;
+
+  :**mock_adxl345.ko** cross-compiled
+    and installed to /lib/modules/;
+  note right
+    module.bbclass handles
+    cross-compilation against
+    the kernel build tree.
+    KERNEL_MODULE_AUTOLOAD
+    ensures modprobe at boot.
+  end note
+}
+
+' ============================================================
+' SWIMLANE 2: Boot-Time (U-Boot + Kernel Init)
+' ============================================================
+partition "2. Boot-Time (Target Board)" #BOOT_COLOR {
+
+  :U-Boot loads Linux kernel +
+    base device tree blob (.dtb);
+  note right
+    The base .dtb describes
+    i.MX8M Mini SoC hardware
+    (UART, SDHC, I2C, etc.)
+  end note
+
+  :Kernel applies DT overlays
+    from /boot/overlays/;
+  note right
+    The bootloader or kernel
+    config loads .dtbo files.
+    Overlays add/modify DT
+    nodes without altering
+    the base .dtb.
+  end note
+
+  :**platform_device created**\n
+    node: /mock-adxl345\n
+    compatible: "yocto_driver_sample,mock-adxl345"\n
+    status: "okay";
+  note right
+    The kernel's DT core
+    unflattens the overlay and
+    creates platform_device
+    structs for each compatible
+    node under the platform bus.
+  end note
+}
+
+' ============================================================
+' SWIMLANE 3: Kernel (Driver Subsystem)
+' ============================================================
+partition "3. Kernel (Driver Subsystem)" #KERNEL_COLOR {
+
+  :**mock_adxl345.ko** loaded
+    (via KERNEL_MODULE_AUTOLOAD
+     or modprobe);
+  note right
+    module_platform_driver()
+    registers the driver with
+    the platform bus.
+  end note
+
+  :Platform bus matches driver
+    to device;
+  note right
+    Bus matching logic compares
+    driver's of_match_table against
+    device node's "compatible" property.
+  end note
+
+  if ("yocto_driver_sample,mock-adxl345"\n    matches?) then (yes)
+    :**mock_adxl345_probe()** called;
+  else (no)
+    :No match — device
+      remains unattached;
+    stop
+  endif
+
+  :Inside probe():\n
+  1. devm_iio_device_alloc(dev, sizeof(data))
+  2. Set iio_dev->name = "mock-adxl345"
+  3. Set iio_dev->channels (X, Y, Z)
+  4. Set iio_dev->info with .read_raw callback
+  5. platform_set_drvdata(pdev, indio_dev)
+  6. devm_iio_device_register(dev, indio_dev);
+
+  note right
+    devm_* functions are
+    managed resources —
+    they auto-clean on
+    driver unbind or
+    device removal.
+  end note
+
+  :**IIO device registered**\n
+    /sys/bus/iio/devices/iio:device0/\n
+    ├── name → "mock-adxl345"\n
+    ├── in_accel_x_raw\n
+    ├── in_accel_y_raw\n
+    ├── in_accel_z_raw\n
+    └── in_accel_scale → 4000;
+
+  :**User-space can now read**
+    acceleration data via sysfs;
+
+  stop
+}
+
+' ============================================================
+' KEY CONCEPT BOX
+' ============================================================
+note right
+  **Key Concept: Device Tree Matching**
+
+  The DT overlay declares a device with
+  compatible = "yocto_driver_sample,mock-adxl345".
+
+  The driver declares an of_match_table:
+    static const struct of_device_id
+    mock_adxl345_of_match[] = {
+      { .compatible =
+          "yocto_driver_sample,mock-adxl345" },
+      { /* sentinel */ }
+    };
+    MODULE_DEVICE_TABLE(of, ...);
+
+  The platform bus compares these strings.
+  A match calls probe().
+end note
+
+@enduml

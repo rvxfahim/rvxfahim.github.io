@@ -1,0 +1,97 @@
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter
+skinparam component {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 13
+}
+skinparam package {
+  BackgroundColor #F3E8FD
+  BorderColor #9334E6
+  FontSize 14
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  FontSize 12
+}
+skinparam note {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontSize 11
+}
+
+title Voxelize Navmesh — System Architecture
+
+package "pointcloud_voxelizer (C++ ROS 2)" as Voxelizer {
+  component "voxelizer_node" as VoxNode
+  component "PCL VoxelGrid" as VoxGrid
+  component "Map Subtraction\n(Chebyshev R-neighbourhood)" as MapSub
+  database "static_map\n(unordered_set<VoxelKey>)" as StaticMap
+}
+
+package "voxnav (C++/Python ROS 2)" as VoxNav {
+  package "C++ Bridge (navmesh_bridge.so)" as Bridge {
+    component "~30 extern \"C\"\nAPI functions" as API
+    component "Recast Pipeline\n(heightfield→detail mesh)" as Recast
+    component "Detour NavMesh\n(path queries)" as Detour
+    component "DetourTileCache\n(dynamic obstacles)" as TileCache
+    component "DetourCrowd\n(agent simulation)" as Crowd
+  }
+
+  package "Python Layer (ctypes)" as Python {
+    component "ctypes bindings\n(argtypes + restype)" as CTypes
+    component "NavMesh / NavMeshQuery" as NMQuery
+    component "Crowd manager" as PyCrowd
+    component "TileCache manager" as PyTileCache
+    component "Coordinate conv\n(Z-up ↔ Y-up)" as Coords
+  }
+
+  package "Co-Simulation Nodes" as CoSim {
+    component "simulate_crowd_cosim\n(crowd-agent pool)" as CrowdSim
+    component "simulate_obstacle_cosim\n(tile cache cylinders)" as ObsSim
+  }
+}
+
+package "recastnavigation (git submodule)" as RecastNav {
+  component "Recast\n(navmesh baking)"
+  component "Detour\n(pathfinding)"
+  component "DetourTileCache\n(compressed tiles)"
+  component "DetourCrowd\n(avoidance)"
+}
+
+package "Tooling" as Tools {
+  component "PyQt5 Baker GUI\n(Open3D preview)"
+  component "CLI Baker\n(bake_tcbin.py)"
+  component "reorient_obj.py\n(Y/Z axis swap)"
+}
+
+VoxNode --> VoxGrid
+VoxGrid --> MapSub
+MapSub --> StaticMap
+VoxNode --> CoSim : publishes /foreground_cloud
+CoSim --> CTypes
+CTypes --> Bridge
+Bridge --> RecastNav
+
+note right of MapSub
+  O((2R+1)³) hash lookups
+  per voxel. Early exit:
+  most static points resolve
+  in 1–2 probes.
+end note
+
+note right of CoSim
+  dyn_obstacle_source toggles between:
+  crowd → zero-velocity agents
+  obstacle → cylinder tile cache injection
+end note
+
+note right of Coords
+  Blender exports Z-up.
+  Recast/Detour uses Y-up.
+  Conversion at every API boundary.
+end note
+
+@enduml

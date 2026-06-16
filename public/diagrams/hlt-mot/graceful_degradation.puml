@@ -1,0 +1,122 @@
+@startuml
+'
+' HLT-MOT Graceful Degradation Chain
+' Shows the multi-level fallback hierarchy across all subsystems.
+'
+
+skinparam backgroundColor white
+skinparam componentStyle rectangle
+skinparam arrowColor black
+skinparam packageBackgroundColor white
+skinparam packageBorderColor black
+skinparam defaultTextColor black
+skinparam titleFontSize 18
+skinparam noteBackgroundColor lemonchiffon
+skinparam noteBorderColor darkgoldenrod
+
+title "HLT-MOT Graceful Degradation Chain"
+
+' ============================================================
+' Layer 1: Object Detection
+' ============================================================
+package "Object Detection" as DetectionPkg #aliceblue {
+  [Ultralytics YOLOv8/v11\nGPU (PyTorch / TensorRT)\n~12ms inference\nBest accuracy: masks + bboxes] as YOLO
+
+  [OpenCV DNN YOLOv4\nCPU inference\nModerate accuracy: bboxes only\nNo segmentation masks] as YOLOv4
+
+  [Mock Detector\nSynthetic moving boxes\nTesting/debugging only] as Mock
+}
+
+YOLO ..> YOLOv4 : "Fallback if:\nultralytics import fails"
+note right of YOLOv4
+  Checked at __init__ time:
+  except ImportError →
+  cv2.dnn.readNetFromDarknet()
+  Uses yolov4.cfg + yolov4.weights
+  Person class only (COCO class 0)
+end note
+
+YOLOv4 ..> Mock : "Fallback if:\nany init exception"
+note right of Mock
+  Wrapped in main():
+  except Exception → create_mock_detector()
+  Returns 3 synthetic detections
+  with programmed movement patterns
+  for testing offline Re-ID logic
+end note
+
+' ============================================================
+' Layer 2: Feature Extraction
+' ============================================================
+package "Feature Extraction" as FeaturePkg #lightgreen {
+  [DINOv2 ViT-B/14 Reg\nGPU, 768-dim embeddings\n~45ms per batch\nSelf-supervised ViT\n142M image pretrain] as DINO
+
+  [ResNet50 (torchvision)\nGPU/CPU, 2048-dim\nIMAGENET1K_V2 weights\nNo segmentation] as ResNet
+}
+
+DINO ..> ResNet : "Fallback if:\ntorch.hub.load fails"
+note right of DINO
+  At FeatureExtractor.__init__():
+  1. Try torch.hub.load('facebookresearch/dinov2', 'dinov2_vitb14_reg')
+  2. except Exception → ResNet50
+  Removes last FC layer:
+  nn.Sequential(*list(model.children())[:-1])
+end note
+
+' ============================================================
+' Layer 3: Performance Operations
+' ============================================================
+package "Performance Operations" as PerfPkg #lightyellow {
+  [Numba JIT\n@njit(fastmath=True)\ncompute_cosine_distance_cpu_numba\ncalculate_iou_numba\ncalculate_spatial_distance_numba\nfind_min_value_index_numba] as Numba
+
+  [Pure NumPy / Python\nUnoptimized fallbacks\nSame logic, no JIT\nSlower but always works] as NumPy
+}
+
+Numba ..> NumPy : "Fallback if:\nnumba not installed"
+note right of Numba
+  Checked at import time:
+  try: import numba → NUMBA_AVAILABLE = True
+  If False: use pure-Python
+  calculate_iou() and
+  calculate_spatial_distance()
+  All functions pre-declared at
+  module level: both versions
+  available regardless
+end note
+
+' ============================================================
+' Overall System Layer
+' ============================================================
+package "End-to-End Pipeline" as PipelinePkg #thistle {
+  [HybridTracker.update()] as Pipeline
+}
+
+YOLO -down-> Pipeline : feeds detections
+YOLOv4 -down-> Pipeline
+Mock -down-> Pipeline
+DINO -down-> Pipeline : feeds features
+ResNet -down-> Pipeline
+Numba -down-> Pipeline : accelerated ops
+NumPy -down-> Pipeline
+
+note left of Pipeline
+  The tracker logs which
+  detection tier and which
+  feature extractor tier
+  are active at startup.
+  System continues to function
+  (with degraded accuracy)
+  even using Mock + ResNet50.
+end note
+
+' Summary footer labels
+legend bottom
+  | Tier | Best | Fallback 1 | Fallback 2 |
+  |---|---|---|---|
+  | Detection | YOLOv8/v11 GPU | YOLOv4 CPU | Mock (testing) |
+  | Features | DINOv2 768-dim | ResNet50 2048-dim | -- |
+  | Performance | Numba JIT | Pure NumPy | -- |
+  | Mask support | Full (YOLOv8-seg) | None (YOLOv4) | None |
+end legend
+
+@enduml

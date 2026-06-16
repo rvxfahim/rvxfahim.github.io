@@ -1,0 +1,149 @@
+@startuml
+'
+' HLT-MOT Re-ID Decision Flow
+' Shows the complete decision tree when a new DeepSORT track appears,
+' plus the periodic offline Re-ID batch flow.
+'
+
+skinparam backgroundColor white
+skinparam activityBackgroundColor lightblue
+skinparam activityBorderColor black
+skinparam arrowColor black
+skinparam noteBackgroundColor lemonchiffon
+skinparam noteBorderColor darkgoldenrod
+skinparam titleFontSize 18
+skinparam defaultFontSize 13
+
+title "HLT-MOT Re-ID Decision Flow"
+
+' ============================================================
+' Online Re-ID section (per-frame)
+' ============================================================
+
+start
+
+:New DeepSORT track becomes confirmed;
+
+if (Primary object active\nAND seen within 3 frames?) then (yes)
+  :Compute cosine distance against\ncached primary gallery tensor;
+  note right
+    _is_primary_object() checks
+    cosine distance < 0.2 against
+    primary_object_features deque,
+    cached as GPU tensor via
+    F.normalize() + torch.mm()
+  end note
+
+  if (Cosine distance < 0.2?) then (yes)
+    if (IoU > 0.1 AND\nframes since lost < 30?) then (yes)
+      :Assign persistent ID = 1;
+      :(Primary re-acquired);
+      :Append feature to primary deque;
+      stop
+    else (no)
+      :Reject: spatial check failed;
+    endif
+  else (no)
+  endif
+endif
+
+:Run _re_identify_object();
+note right
+  Called for every new track
+  when primary check fails.
+  Queries all inactive ID
+  feature galleries.
+end note
+
+:Compute min cosine distance\nagainst all inactive galleries\n(GPU batch if available);
+
+if (Min cosine distance < 0.15?) then (yes)
+  :Check spatial distance cap:
+  200px from last known position;
+  note right
+    Uses numba-accelerated
+    calculate_spatial_distance_numba()
+  end note
+
+  if (Distance <= 200px?) then (yes)
+    :Re-activate inactive ID;
+    :Remove from inactive_ids set;
+    :Map deepsort_id -> inactive_id\nin id_mapping dict;
+    :Merge feature galleries;
+    stop
+  else (no)
+    :Spatial check failed;
+  endif
+endif
+
+:Assign brand-new persistent ID\n(id_mapping[deepsort_id] = next_id++);
+:Initialize new feature gallery\nwith empty deque(maxlen=5000);
+stop
+
+' ============================================================
+' Offline Re-ID (periodic batch operation)
+' ============================================================
+
+title "Offline Re-ID (every re_id_interval frames)"
+
+start
+
+:Offline Re-ID triggered via\n_perform_offline_reid();
+note right
+  Runs every re_id_interval frames
+  (default: every 2 frames)
+end note
+
+if (Primary object lost?) then (yes)
+  :Enter primary-only recovery mode;
+  note right
+    Compare primary_object_id only
+    against inactive_ids.
+    Threshold relaxed: cosine < 0.25
+  end note
+  :Filter inactive candidates\nby spatial proximity to\nKalman predicted position (< 300px);
+else (no)
+  :Full mode: compare all active IDs\nagainst all inactive IDs;
+  note right
+    Default merge threshold: 0.2
+    Uses up to 10 most recent features
+    per active ID gallery
+  end note
+endif
+
+:Build full distance matrix on GPU;
+note right
+  torch.mm(active_features, inactive_features.t())
+  Single batched operation
+end note
+
+:Extract per-ID-pair minima from matrix;
+:Apply IoU consistency check\nusing last known bounding boxes;
+note right
+  IoU threshold: 0.3
+  Relaxed 20% (0.24) in
+  primary-only mode
+end note
+
+:Sort candidates by ascending distance;
+:Resolve conflicts;
+note right
+  Prevent A->B and B->A
+  pointing to same active ID.
+  Assign each inactive to at most
+  one active ID.
+end note
+
+if (Any merges to apply?) then (yes)
+  :Merge feature galleries;
+  :Update id_mapping entries\npointing to remove_id;
+  :Delete remove_id from:
+  - feature_gallery
+  - inactive_ids
+  - track_history;
+  :Ensure keep_id is active;
+endif
+
+stop
+
+@enduml

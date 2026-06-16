@@ -1,17 +1,87 @@
 ---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import FeaturedPost from '../components/FeaturedPost.astro';
+import PostGrid from '../components/PostGrid.astro';
+import TraceDivider from '../components/TraceDivider.astro';
 
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
+allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const featuredPost = allPosts.find((p) => p.data.featured);
+const regularPosts = allPosts.filter((p) => !p.data.featured);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout
+  title="Nafis Ahmed — Embedded Systems Engineer"
+  description="Personal site and project portfolio. Embedded systems, computer vision, robotics, and the tools that make hard things learnable."
+>
+  <Hero />
+
+  {
+    featuredPost && (
+      <>
+        <TraceDivider />
+        <section class="px-6 md:px-12 py-10">
+          <FeaturedPost post={featuredPost} />
+        </section>
+      </>
+    )
+  }
+
+  {
+    regularPosts.length > 0 && <PostGrid posts={regularPosts} />
+  }
+
+  <TraceDivider />
+</BaseLayout>
+
+<script>
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!prefersReduced) {
+    document.addEventListener('DOMContentLoaded', () => {
+      const heroHeading = document.querySelector('#hero-name');
+      const heroRule = document.querySelector('#hero-rule');
+      const heroRole = document.querySelector('#hero-role');
+      const heroTagline = document.querySelector('#hero-tagline');
+
+      if (heroHeading) {
+        heroHeading.style.animation = 'heroFadeIn 0.6s ease-out both';
+      }
+      if (heroRule) {
+        heroRule.style.animation = 'heroDrawRule 0.8s 0.2s ease-out both';
+      }
+      if (heroRole) {
+        heroRole.style.animation = 'heroFadeIn 0.6s 0.4s ease-out both';
+      }
+      if (heroTagline) {
+        heroTagline.style.animation = 'heroFadeIn 0.6s 0.5s ease-out both';
+      }
+    });
+  }
+</script>
+
+<style>
+  @keyframes heroFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes heroDrawRule {
+    from {
+      width: 0;
+      opacity: 0;
+    }
+    to {
+      width: 6rem;
+      opacity: 1;
+    }
+  }
+</style>

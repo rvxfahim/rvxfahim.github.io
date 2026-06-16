@@ -1,0 +1,89 @@
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter
+skinparam state {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 13
+}
+skinparam note {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontSize 12
+}
+
+title Self-Overwriting OTA — Four Stage System Flow
+
+state "Stage 1: Download" as S1 {
+  state "WiFi.connect()\n(STA mode)" as wifi
+  state "HTTP GET\nfirmware.bin" as http
+  state "ps_malloc()\nbuffer in PSRAM\n(~4MB max)" as psram
+
+  wifi --> http : connected
+  http --> psram : stream body
+}
+
+state "Stage 2: System Teardown" as S2 {
+  state "WiFi.mode(WIFI_OFF)\nWiFi.disconnect()" as nowifi
+  state "esp_ipc_call(CORE_1)\npark in IRAM loop" as park
+  state "vTaskSuspendAll()\nsuspend scheduler" as suspend
+  state "esp_intr_noniram_disable()\ndisable flash interrupts" as noint
+  state "portDISABLE_INTERRUPTS()\nthis core" as core0off
+
+  nowifi --> park
+  park --> suspend
+  suspend --> noint
+  noint --> core0off
+}
+
+state "Stage 3: IRAM Flash Routine\n(IRAM_ATTR, no cache access)" as S3 {
+  state "Cache ON:\nmemcpy PSRAM → DRAM\n(4KB chunk)" as on
+  state "Cache_Read_Disable_rom(0)\ncache OFF" as off
+  state "esp_rom_spiflash_erase_sector\n+ esp_rom_spiflash_write\n(ROM functions)" as romwrite
+  state "Cache_Read_Enable_rom(0)\ncache ON" as enable
+  state "Advance to\nnext sector" as next
+
+  on --> off
+  off --> romwrite
+  romwrite --> enable
+  enable --> next
+  next --> on : loop until all sectors written
+}
+
+state "Stage 4: Reboot" as S4 {
+  state "Reconfigure WDT\nstg0 = System Reset" as wdt
+  state "100 μs\ntimeout" as timeout
+  state "WDT fires →\nRTC reset" as reset
+  state "ESP32 boots\nnew firmware" as boot
+
+  wdt --> timeout
+  timeout --> reset
+  reset --> boot
+}
+
+S1 --> S2 : all bytes buffered in PSRAM
+S2 --> S3 : system quiesced,\nsingle-core, no interrupts
+S3 --> S4 : last sector written
+
+note right of S2
+  Critical invariant:
+  Both cores must never touch
+  flash while cache is disabled.
+  Core 1 spins in IRAM.
+end note
+
+note right of S3
+  PSRAM inaccessible when cache OFF
+  → DRAM_ATTR buffer [4KB]
+  bridges the gap.
+  ets_printf() for diagnostics
+  (ROM function, DRAM format strings).
+end note
+
+note bottom of S4
+  No return to loop().
+  No rollback possible.
+  Power loss during write = brick.
+end note
+
+@enduml

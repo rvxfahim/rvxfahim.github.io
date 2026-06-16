@@ -1,0 +1,245 @@
+@startuml
+' =============================================================================
+' Deployment Diagram — Yocto Driver Sample Yocto Project
+'
+' Shows the physical deployment of build artifacts from the development host
+' onto the i.MX8M Mini EVK target board via an SD card.
+'
+' Use: plantuml deployment_diagram.puml
+' =============================================================================
+
+!define HOST_COLOR A9DCDF
+!define ARTIFACT_COLOR D5E8D4
+!define SD_COLOR E1D5E7
+!define BOARD_COLOR FEF0D9
+!define KERNEL_COLOR F8CECC
+!define APP_COLOR DAE8FC
+!define HW_COLOR E6E6E6
+
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  FontSize 13
+}
+
+skinparam artifact {
+  BackgroundColor D5E8D4
+  BorderColor #4CAF50
+  FontSize 11
+}
+
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+  FontSize 11
+}
+
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #4CAF50
+  FontSize 11
+}
+
+skinparam folder {
+  BackgroundColor #FFF9C4
+  BorderColor #FBC02D
+  FontSize 11
+}
+
+skinparam package {
+  BackgroundColor #F5F5F5
+  BorderColor #666666
+  FontSize 14
+  FontStyle bold
+}
+
+skinparam arrow {
+  Color #555555
+}
+
+title Yocto Driver Sample — Deployment Diagram (Build → SD Card → Target Board)
+
+' ============================================================================
+' NODE 1: Development Host
+' ============================================================================
+node "🖥️ Development Host\nUbuntu 22.04 LTS" as DevHost #HOST_COLOR {
+  folder "sources/" as SourcesDir {
+    artifact "poky\n(Kirkstone)" as PokySrc
+    artifact "meta-openembedded" as OESrc
+    artifact "meta-freescale" as FSSrc
+    artifact "meta-imx\n(NXP BSP)" as IMXSrc
+  }
+
+  package "meta-yocto_driver_sample (Custom Layer)" as CustomLayer {
+    artifact "mock-adxl345_1.0.bb\n(Kernel Module Recipe)" as KernelRecipe
+    artifact "mock-adxl345-app.bb\n(User-Space App Recipe)" as AppRecipe
+    artifact "yocto-driver-sample-image.bb\n(Image Recipe)" as ImageRecipe
+  }
+
+  node "Yocto Build Engine" as BuildEngine {
+    component "BitBake\nTask Executor" as BitBake
+    component "Cross-Compiler\n(aarch64-poky-linux-gcc)" as CrossComp
+    component "dtc\n(Device Tree Compiler)" as DTC
+  }
+
+  folder "build/tmp/deploy/images/" as DeployDir {
+    artifact "mock_adxl345.ko\n(Kernel Module)" as KoFile #KERNEL_COLOR
+    artifact "mock-adxl345.dtbo\n(DT Overlay)" as DtboFile #KERNEL_COLOR
+    artifact "mock-adxl345-reader\n(User-Space Binary)" as BinFile #APP_COLOR
+    artifact "yocto-driver-sample-image-*.wic\n(Bootable SD Image)" as WicFile
+    artifact "Image\n(Linux Kernel 5.15)" as KernelImage
+  }
+
+  component "dd / bmaptool\n(Flash Utility)" as FlashTool
+}
+
+' Build flow arrows
+SourcesDir -down-> BuildEngine : "source oe-init-build-env"
+CustomLayer -up-> BuildEngine : "bitbake <target>"
+BuildEngine -right-> DeployDir : "produces artifacts"
+
+' ============================================================================
+' NODE 2: SD Card (Deployment Medium)
+' ============================================================================
+node "💾 SD Card\n(Deployment Medium)" as SDCard #SD_COLOR {
+  node "Boot Partition\n(FAT32, /dev/sdX1)" as BootPart {
+    artifact "U-Boot (imx-boot)" as UBootBin
+    artifact "Linux Kernel (Image)" as KernelOnSD
+    artifact "Device Tree Blob (*.dtb)" as DTB
+    artifact "mock-adxl345.dtbo\n(Overlay)" as DtboOnSD
+  }
+
+  node "Root Filesystem Partition\n(ext4, /dev/sdX2)" as RootPart {
+    folder "/lib/modules/<kver>/" as ModulesDir {
+      artifact "mock_adxl345.ko" as KoOnSD #KERNEL_COLOR
+    }
+
+    folder "/boot/overlays/" as OverlaysDir {
+      artifact "mock-adxl345.dtbo" as DtboOnSD2
+    }
+
+    folder "/usr/bin/" as BinDir {
+      artifact "mock-adxl345-reader" as AppOnSD #APP_COLOR
+    }
+
+    folder "/lib/systemd/system/" as SystemdDir {
+      artifact "mock-adxl345-reader.service" as ServiceOnSD
+    }
+
+    folder "/sys/bus/iio/" as SysfsMount {
+      component "sysfs (mounted at boot)" as Sysfs
+    }
+  }
+}
+
+' Flashing path
+DeployDir -down-> SDCard : "sudo dd if=<image>.wic of=/dev/sdX bs=1M\nor bmaptool copy"
+
+' ============================================================================
+' NODE 3: Target Hardware
+' ============================================================================
+node "🎯 Target Hardware\nNXP i.MX8M Mini EVK\n(imx8mm-lpddr4-evk)" as TargetBoard #BOARD_COLOR {
+
+  node "SoC — i.MX8M Mini" as SoC #HW_COLOR {
+    component "ARM Cortex-A53\n(4 cores @ 1.8 GHz)" as CPU
+    component "ARM Cortex-M4\n(Real-time Co-Processor)" as M4
+    component "DDR4 RAM\n(LPDDR4, up to 4 GB)" as RAM
+  }
+
+  node "Boot ROM → U-Boot → Linux" as BootChain {
+    component "U-Boot SPL\n(Secondary Program Loader)" as SPL
+    component "ARM Trusted Firmware\n(ATF / BL31)" as ATF
+    component "U-Boot Proper" as UBootProper
+    component "⚙️ Linux Kernel 5.15\n(imx kernel)" as RunningKernel
+  }
+
+  node "Kernel Space" as KernelSpace {
+    component "Platform Bus\n(of_match_table matching)" as PlatBus
+    component "mock_adxl345.ko\n(Platform Driver)" as RunningDriver #KERNEL_COLOR
+    component "IIO Subsystem\n(Industrial I/O)" as IIO
+  }
+
+  node "User Space" as UserSpace {
+    component "systemd (PID 1)" as Systemd
+    component "mock-adxl345-reader\n(sysfs polling loop)" as RunningApp #APP_COLOR
+  }
+
+  node "I/O & Peripherals" as Peripherals #HW_COLOR {
+    component "UART\n(Debug Console)" as UART
+    component "Ethernet\n(Gigabit)" as Eth
+    component "microSD Slot\n(Boot Source)" as SDSlot
+    component "GPIO / I²C / SPI\n(Expansion Headers)" as GPIO
+  }
+}
+
+' ============================================================================
+' DEPLOYMENT CONNECTIONS
+' ============================================================================
+
+' SD card inserted into target
+SDCard -right-> TargetBoard : "Insert SD Card\n→ mmcblk0"
+
+' Boot chain on target
+SDSlot -down-> SPL : "boot ROM loads"
+SPL -down-> ATF : "initializes\nsecure world"
+ATF -down-> UBootProper : "hands off to\nU-Boot Proper"
+UBootProper -down-> RunningKernel : "loads kernel + dtb\napplies overlays"
+
+' Kernel driver binding
+RunningKernel -down-> PlatBus : "probes platform bus"
+DtboOnSD -up-> PlatBus : "creates platform_device\ncompatible=\"yocto_driver_sample,mock-adxl345\""
+RunningDriver -up-> PlatBus : "registers driver\nof_match_table match"
+PlatBus -down-> RunningDriver : "calls probe()"
+RunningDriver -down-> IIO : "devm_iio_device_register()\n+ iio_triggered_buffer_setup()"
+
+' Userspace
+IIO -down-> Sysfs : "exposes via /sys/bus/iio/"
+RunningApp -up-> Sysfs : "reads every 2 seconds\nin_accel_x/y/z_raw, in_accel_scale"
+Systemd -down-> RunningApp : "manages lifecycle\n(oneshot, auto-restart)"
+ServiceOnSD -up-> Systemd : "enabled at boot\n(multi-user.target.wants)"
+
+' ============================================================================
+' OPTIONAL: Remote Access (future expansion)
+' ============================================================================
+node "☁️ Optional: Remote Access" as RemoteCloud #HOST_COLOR {
+  component "SSH / Serial Console\n(Development Access)" as SSHAccess
+  component "Future: MQTT / ROS2\n(UGV Telemetry)" as FutureTelemetry
+}
+
+TargetBoard -up-> RemoteCloud : "Ethernet / Wi-Fi\n(for development + telemetry)"
+
+' ============================================================================
+' LEGEND + NOTES
+' ============================================================================
+note right of DevHost
+  **Build Host Notes:**
+  1. All source layers are fetched from git repos
+  2. BitBake resolves DEPENDS/RDEPENDS DAG
+  3. Cross-compiler targets aarch64-poky-linux
+  4. .wic image is a complete bootable SD card image
+  (includes partition table, U-Boot, kernel, rootfs)
+end note
+
+note right of SDCard
+  **SD Card Layout:**
+  Partition 1 (FAT32): Boot files
+  Partition 2 (ext4): Root filesystem
+
+  The .wic image bundles everything.
+  Flash with dd or bmaptool for faster writes
+  (bmaptool skips empty blocks).
+end note
+
+note right of TargetBoard
+  **Target Board Notes:**
+  - Boot source: microSD (primary)
+  - Alternative: eMMC (on some variants)
+  - Debug via UART (115200 8N1)
+  - The mock_adxl345 driver simulates a
+    3-axis accelerometer using the IIO
+    subsystem — no physical ADXL345 needed
+  - The reader app logs to journald
+    (journalctl -u mock-adxl345-reader -f)
+end note
+
+@enduml

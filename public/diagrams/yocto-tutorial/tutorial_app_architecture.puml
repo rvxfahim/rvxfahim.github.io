@@ -1,0 +1,80 @@
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter
+skinparam component {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 13
+}
+skinparam package {
+  BackgroundColor #F3E8FD
+  BorderColor #9334E6
+  FontSize 14
+}
+skinparam note {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontSize 12
+}
+
+title Yocto Interactive Tutorial - App Architecture
+
+package "Next.js Static Export" {
+
+  package "data/ (Content Layer)" as DataLayer {
+    file "steps.ts (20 steps)" as Steps
+    file "code-files.ts (C, BitBake, DTS)" as CodeFiles
+    file "terminal-output.ts (playback)" as TermOut
+    file "file-trees.ts (8 snapshots)" as Trees
+    file "diagrams.ts (6 diagram metadata)" as Diagrams
+    file "glossary.ts (26 terms)" as Glossary
+  }
+
+  package "React Components" as Components {
+    component "Three-Panel IDE Layout" as Layout
+    component "Left: FileTree (hierarchical)" as FileTree
+    component "Center Top: CodeViewer (highlighted)" as CodeViewer
+    component "Center Bottom: Terminal (xterm.js 6)" as Terminal
+    component "Right: ObjectivePanel (step info)" as Objectives
+  }
+
+  package "Hooks" as Hooks {
+    component "useTerminal (state machine)" as TerminalHook
+    component "useProgress (localStorage)" as ProgressHook
+  }
+}
+
+package "Utilities" as Utils {
+  component "Custom Syntax Highlighter" as Highlighter
+  component "Playback Controls (0.5x-5x)" as Playback
+}
+
+cloud "GitHub Pages (static deploy)" as GH
+
+DataLayer -down-> Components : TypeScript data objects
+Hooks -down-> Terminal : drives xterm.js write()
+Highlighter -down-> CodeViewer : syntax tokens
+TerminalHook -down-> Playback : state machine controls
+Components -down-> GH : static export
+
+note right of DataLayer
+  Adding a step = editing a
+  TypeScript file. No component
+  changes needed.
+end note
+
+note bottom of TerminalHook
+  StrictMode-safe via refs.
+  Abort flag prevents leaked
+  timeouts on double-mount.
+  20ms char delay x speed.
+end note
+
+note right of Components
+  VS Code dark theme with
+  5-level surface hierarchy.
+  prefers-reduced-motion
+  respected globally.
+end note
+
+@enduml
