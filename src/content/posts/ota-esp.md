@@ -5,7 +5,7 @@ excerpt: "A custom over-the-air firmware update system that overwrites its own r
 category: "embedded"
 featured: false
 github: "https://github.com/rvxfahim/OTA_ESP"
-technologies: ["C++", "ESP32", "PlatformIO", "FreeRTOS", "Python"]
+technologies: ["C", "C++", "ESP32", "PlatformIO", "FreeRTOS", "Python"]
 ---
 
 ## The Problem

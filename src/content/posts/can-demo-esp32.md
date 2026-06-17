@@ -6,7 +6,7 @@ category: "embedded"
 featured: false
 github: "https://github.com/rvxfahim/CAN-Demo-ESP32"
 demo_url: "https://rvxfahim.github.io/CAN-Demo-ESP32/"
-technologies: ["C++", "ESP32", "PlatformIO", "FreeRTOS", "LVGL", "CAN Bus", "TFT_eSPI", "SquareLine Studio", "DBC"]
+technologies: ["C", "C++", "ESP32", "PlatformIO", "FreeRTOS", "LVGL", "CAN Bus", "TFT_eSPI", "SquareLine Studio", "DBC"]
 ---
 
 ## The Problem
