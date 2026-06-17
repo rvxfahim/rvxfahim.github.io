@@ -170,6 +170,8 @@ a:hover {
 }
 .prose img {
   border-radius: 8px;
+  background: white;
+  padding: 1rem;
 }
 
 /* ============================================
