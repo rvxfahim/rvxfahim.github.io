@@ -1,0 +1,64 @@
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter
+skinparam state {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 13
+}
+skinparam note {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontSize 12
+}
+
+title RX System Controller — State Machine
+
+[*] --> Boot
+
+state "Boot\nPower-on, serial init" as Boot
+state "DisplayInit\nTFT + LVGL + Touch setup" as DisplayInit
+state "WaitingForData\nIdle, waiting for\nfirst CAN frame" as Waiting
+state "Active\nNormal operation\nUI updates + relay control" as Active
+state "Degraded\n1500ms timeout\nstale data warning" as Degraded
+state "Fault\nUnrecoverable error\nred overlay" as Fault
+
+Boot --> DisplayInit : boot complete
+
+DisplayInit --> Waiting : display + LVGL + touch OK
+DisplayInit --> Fault : init failure\n(lost I2C, SPI fail)
+
+Waiting --> Active : first ClusterFrame received
+
+Active --> Degraded : HealthMonitor timeout\n(no frame for 1500ms)
+Active --> Fault : critical error
+
+Degraded --> Active : new ClusterFrame arrives\n(auto-recovery)
+Degraded --> Fault : critical error
+
+Fault --> [*] : requires hardware reset
+
+note right of Active
+  Normal state:
+  - UI updates every frame
+  - Relays follow turn signals
+  - HealthMonitor watching
+end note
+
+note right of Degraded
+  Graceful degradation:
+  - Yellow "STALE DATA" overlay
+  - UI frozen at last values
+  - Outputs disabled (safe mode)
+  - Auto-recovers on next frame
+end note
+
+note bottom of Fault
+  Terminal state:
+  - Red "SYSTEM FAULT" overlay
+  - All updates halted
+  - Requires hardware reset or
+    power cycle to recover.
+end note
+
+@enduml

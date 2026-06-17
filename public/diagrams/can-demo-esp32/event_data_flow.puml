@@ -1,0 +1,97 @@
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter
+skinparam sequence {
+  ArrowColor #333333
+  LifeLineBorderColor #1A73E8
+  LifeLineBackgroundColor #E8F0FE
+}
+skinparam participant {
+  BackgroundColor #F3E8FD
+}
+skinparam note {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontSize 12
+}
+
+title CAN Frame Processing Pipeline — Event / Data Flow
+
+participant "TX Board\n(ESP32)" as TX
+participant "CAN Bus\n(500 kbps)" as BUS
+participant "CanInterface\nISR\n(Core 0)" as ISR
+participant "EventQueue\nFreeRTOS\n(ISR-safe)" as EQ
+participant "SystemController\nDispatch\n(Core 0 task)" as SC
+participant "MessageRouter\nPub/Sub\n(sticky cache)" as MR
+participant "UiController\nLVGL Task\n(Core 1)" as UI
+participant "IOModule\nRelay Driver\n(Core 0)" as IO
+participant "HealthMonitor\nTimeout Watch\n(Core 0)" as HM
+
+note over ISR
+  ISR design invariant:
+  validate → unpack DBC → queue.
+  Never touch application state.
+end note
+
+TX -> BUS : Cluster frame (ID 0x65, DLC 3)\n10 Hz cadence
+BUS -> ISR : CAN frame received
+
+ISR -> ISR : validate ID (0x65)\nvalidate DLC (≥3)\nvalidate IDE (standard)
+
+ISR -> ISR : Unpack_Cluster_lecture()\n→ Cluster_t {speed, left, right}
+
+ISR -> EQ : PushFromISR()\nEvent::MakeClusterFrame()
+
+loop ProcessingTask (Core 0, ~1 tick cadence)
+  EQ -> SC : Pop() event from queue
+  SC -> SC : Dispatch(event)\nevaluate state transitions
+
+  SC -> MR : PublishCluster(cluster, millis())
+  note right of MR
+    Sticky last value cached.
+    Timestamp stored for
+    HealthMonitor pull model.
+  end note
+
+  MR -> UI : ClusterCallback(speed, signals)
+  activate UI
+  UI -> UI : ConvertSpeedToArcValue()\nmap 0..4095 → 0..240
+  UI -> UI : lv_arc_set_value(ui_Arc1)\nlv_obj_set_style_text_opa(turn labels)
+  UI -> UI : lv_timer_handler() → TFT
+  deactivate UI
+
+  MR -> IO : ClusterCallback(speed, signals)
+  activate IO
+  IO -> IO : Store leftRequested / rightRequested\nphase sync on rising edge
+  IO -> IO : 1 Hz blink timer → ApplyOutputs()\nGPIO 32 (left), GPIO 33 (right)
+  deactivate IO
+
+  SC -> HM : CheckTimeout(pull last-seen timestamp)
+  HM -> HM : (now - lastSeen) > 1500ms ?
+  alt timeout detected
+    HM -> EQ : PushFromISR()\nEvent::MakeFrameTimeout()
+    EQ -> SC : FrameTimeout event
+    SC -> SC : TransitionTo(Degraded)
+    SC -> UI : EnqueueMessage(ShowDegraded)
+    SC -> IO : PublishSystemStatus(outputsEnabled=false)
+  else fresh data
+    HM -> HM : inTimeout_ = false\n(silent)
+  end
+end
+
+note over ISR, EQ
+  ISR-safe queue push uses
+  FreeRTOS xQueueSendFromISR().
+  Main loop pops with zero
+  timeout for non-blocking drain.
+end note
+
+note over UI, IO
+  UiController and IOModule
+  are independently subscribed
+  to MessageRouter topics.
+  No direct coupling between
+  UI and IO code paths.
+end note
+
+@enduml

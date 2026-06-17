@@ -1,0 +1,62 @@
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter
+skinparam state {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 13
+}
+skinparam note {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontSize 12
+}
+
+title CAN-Demo-ESP32 — System Overview
+
+state "TX ESP32 (tx_board)" as TX {
+  state "CAN0 at 500 kbps" as TX_CAN
+  state "Cluster_t\nspeed + turn signals" as TX_DATA
+  TX_CAN <-- TX_DATA : Pack_Cluster_lecture()
+}
+
+state "RX ESP32 (rx_board)" as RX {
+  state "CanInterface\nISR: validate + unpack DBC" as CAN_IF
+  state "EventQueue\nFreeRTOS (ISR-safe push)" as EQ
+  state "SystemController\nState Machine (Dispatch)" as SC
+  state "MessageRouter\nPub/Sub Bus (sticky values)" as MR
+  state "UiController\nLVGL v9.1 on Core 1" as UI
+  state "IOModule\nRelay Driver (GPIO 32/33)" as IO
+  state "HealthMonitor\nTimeout Watchdog (1500ms)" as HM
+
+  CAN_IF --> EQ : ClusterFrame\nfrom ISR
+  EQ --> SC : Pop + Dispatch
+  SC --> MR : PublishCluster
+  MR --> UI : subscribe\n(speed arc, indicators)
+  MR --> IO : subscribe\n(relay blink state)
+  MR --> HM : last-seen timestamp
+  HM --> SC : FrameTimeout
+}
+
+state "TFT Display (SPI)" as TFT
+state "Relays (Left / Right)" as RLY
+
+TX_CAN --> CAN_IF : CAN Bus\nCAN_H / CAN_L\n500 kbps
+
+UI --> TFT : SPI via TFT_eSPI
+IO --> RLY : GPIO output
+
+note bottom of TX
+  TX sends Cluster frame (ID 0x65)
+  at 10 Hz with speed (12-bit)
+  and turn signal bits (1-bit each).
+end note
+
+note bottom of RX
+  ISR does minimal work: validate,
+  unpack DBC, push to queue. All
+  business logic runs in task context
+  on Core 0. UI runs on Core 1.
+end note
+
+@enduml

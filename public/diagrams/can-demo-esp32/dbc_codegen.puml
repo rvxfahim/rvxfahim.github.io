@@ -1,0 +1,56 @@
+@startuml
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter
+skinparam state {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 13
+}
+skinparam note {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontSize 12
+}
+
+title DBC-Driven Code Generation — Single Source of Truth
+
+state "tools/Lecture.dbc\nCAN Database File" as DBC {
+  state "BO_ 101 Cluster: 3 ECU_Student" as MSG
+  state "SG_ speed: 9|12@1+\n(1,0) [0|4095]" as SIG1
+  state "SG_ Left_Turn_Signal:\n8|1@1+" as SIG2
+  state "SG_ Right_Turn_Signal:\n21|1@1+" as SIG3
+}
+
+state "c-coderdbc\nCode Generator" as GEN
+
+state "Generated Code\nlecture.h / lecture.c" as CODEGEN {
+  state "Cluster_t struct\n{speed, Left_Turn_Signal,\nRight_Turn_Signal}" as STRUCT
+  state "Pack_Cluster_lecture()\nencode to CAN payload" as PACK
+  state "Unpack_Cluster_lecture()\ndecode from CAN payload" as UNPACK
+}
+
+state "TX Firmware\n(tx_board)" as TXFW
+state "RX Firmware\n(rx_board)" as RXFW
+
+DBC --> GEN : input
+GEN --> CODEGEN : generate
+PACK --> TXFW : compile & link
+UNPACK --> RXFW : compile & link
+
+note right of GEN
+  Tool: astand/c-coderdbc
+  Command: coderdbc
+    -i Lecture.dbc
+    -o lib/Generated/
+
+  Never edit generated files.
+  DBC is the single source of truth.
+end note
+
+note bottom of DBC
+  Edit DBC -> re-generate ->
+  rebuild both firmwares.
+  No manual bit shifting.
+end note
+
+@enduml
