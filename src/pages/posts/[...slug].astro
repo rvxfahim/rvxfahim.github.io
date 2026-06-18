@@ -59,7 +59,7 @@ const { Content } = await render(post);
         ))}
       </div>
     )}
-    {(github || demo_url || demo_video) && (
+    {(github || demo_url) && (
       <div class="flex flex-wrap items-center gap-4 mt-6 pb-6 border-b border-(--color-border)">
         {github && (
           <a
@@ -81,16 +81,20 @@ const { Content } = await render(post);
             Live Demo ↗
           </a>
         )}
-        {demo_video && (
-          <a
-            href={demo_video}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="font-utility text-sm text-(--color-accent) hover:text-(--color-accent-warm) transition-colors"
-          >
-            ▶ Watch Demo
-          </a>
-        )}
+      </div>
+    )}
+    {demo_video && (
+      <div class="mt-8">
+        <video
+          class="w-full aspect-video rounded-lg"
+          controls
+          autoplay
+          muted
+          loop
+          playsinline
+        >
+          <source src={demo_video} type="video/mp4" />
+        </video>
       </div>
     )}
     <div class="prose mt-8">
