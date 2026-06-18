@@ -20,7 +20,7 @@ The result is a dual-compressor HVAC controller that models room thermal dynamic
 
 The system is split cleanly across two platforms that communicate over USB serial at 9600 baud using a custom JSON protocol:
 
-### Arduino Firmware (FreeRTOS / C++)
+### Arduino Firmware (FreeRTOS / C)
 
 The Arduino Mega 2560 runs six concurrent FreeRTOS tasks, each handling a distinct responsibility:
 
